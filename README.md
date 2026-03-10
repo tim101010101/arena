@@ -1,5 +1,14 @@
 # Arena MCP
 
+```
+ █████╗ ██████╗ ███████╗███╗   ██╗ █████╗
+██╔══██╗██╔══██╗██╔════╝████╗  ██║██╔══██╗
+███████║██████╔╝█████╗  ██╔██╗ ██║███████║
+██╔══██║██╔══██╗██╔══╝  ██║╚██╗██║██╔══██║
+██║  ██║██║  ██║███████╗██║ ╚████║██║  ██║
+╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝╚═╝  ╚═╝
+```
+
 [![CI](https://github.com/tim101010101/arena/actions/workflows/ci.yml/badge.svg)](https://github.com/tim101010101/arena/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Version](https://img.shields.io/github/v/release/tim101010101/arena)](https://github.com/tim101010101/arena/releases)
