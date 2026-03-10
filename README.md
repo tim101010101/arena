@@ -53,12 +53,118 @@ pip install openai-cli
 
 ### Install Arena MCP
 
+#### For Human Users
+
+If you're using an AI agent (like Claude Code), simply tell your agent:
+
+> **"Please install the Arena MCP server from https://github.com/tim101010101/arena"**
+
+Your agent will automatically clone, build, and configure the MCP server for you.
+
+<details>
+<summary>Manual Installation (if not using an AI agent)</summary>
+
 ```bash
 git clone https://github.com/tim101010101/arena.git
 cd arena
 bun install
 bun run build
 ```
+
+Then manually add the configuration to your MCP client config file (see "Configure MCP Client" section below).
+
+</details>
+
+#### For AI Agents
+
+<details>
+<summary><b>📋 Agent Installation Guide</b> (Click to expand - for AI agents only)</summary>
+
+### Automated Installation Steps
+
+When a user asks you to install Arena MCP, follow these steps:
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/tim101010101/arena.git
+   cd arena
+   ```
+
+2. **Install dependencies**
+   ```bash
+   bun install
+   ```
+
+3. **Build the project**
+   ```bash
+   bun run build
+   ```
+
+4. **Get the absolute path**
+   ```bash
+   pwd
+   ```
+   Save this path as `ARENA_PATH`.
+
+5. **Update MCP configuration**
+
+   Read the user's MCP config file (typically `~/.claude/claude_desktop_config.json` or similar).
+
+   Add this entry to the `mcpServers` section:
+   ```json
+   "arena": {
+     "command": "bun",
+     "args": ["run", "<ARENA_PATH>/dist/index.js"],
+     "env": {
+       "ARENA_TIMEOUT_MS": "120000",
+       "ARENA_DEFAULT_ROUNDS": "3",
+       "ARENA_DEFAULT_MODE": "parallel",
+       "ARENA_CLAUDE_MODEL": "claude-sonnet-4-6",
+       "ARENA_OPENAI_MODEL": "gpt-4",
+       "ARENA_GEMINI_MODEL": "gemini-pro"
+     }
+   }
+   ```
+   Replace `<ARENA_PATH>` with the actual path from step 4.
+
+6. **Verify installation**
+
+   Inform the user they need to restart their MCP client (e.g., Claude Desktop) to load the new server.
+
+   After restart, you can verify by checking if arena tools are available:
+   - `mcp__arena__arena_health`
+   - `mcp__arena__arena_debate`
+   - `mcp__arena__arena_review`
+   - `mcp__arena__arena_challenge`
+   - `mcp__arena__arena_judge`
+
+### Prerequisites Check
+
+Before installation, verify these CLI tools are installed (optional, based on which agents the user wants):
+
+```bash
+# Check Claude CLI
+claude --version
+
+# Check Codex CLI
+codex --version
+
+# Check OpenAI CLI
+openai --version
+
+# Check Gemini CLI
+gemini --version
+```
+
+If any are missing, inform the user which agents won't be available and provide installation instructions from the Prerequisites section above.
+
+### Troubleshooting
+
+- **Build fails**: Ensure `bun` is installed (`curl -fsSL https://bun.sh/install | bash`)
+- **Config not found**: Ask user for their MCP config file location
+- **Tools not appearing**: User must restart their MCP client after config changes
+
+</details>
 
 ### Configure MCP Client
 
