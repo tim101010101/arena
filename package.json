@@ -35,6 +35,8 @@
     "test": "bun test",
     "test:integration": "bun test tests/integration",
     "build": "bun build src/index.ts --target=bun --outfile=dist/index.js --minify && echo '#!/usr/bin/env bun' | cat - dist/index.js > dist/index.tmp && mv dist/index.tmp dist/index.js && chmod +x dist/index.js",
+    "prepare": "bun run build",
+    "prepack": "bun run build",
     "start": "bun dist/index.js",
     "dev": "bun --watch src/index.ts"
   },

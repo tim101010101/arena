@@ -1,16 +1,12 @@
 import { z } from "zod";
 
-// Reuse context source schema from codex-mcp
-export const ContextSourceSchema = z.object({
-  type: z.enum(["raw", "git_ref", "file_list", "git_range", "patch_file"]),
-  code: z.string().optional(),
-  ref: z.string().optional(),
-  paths: z.array(z.string()).optional(),
-  from: z.string().optional(),
-  to: z.string().optional(),
-  path: z.string().optional(),
-  root: z.string().optional(),
-});
+export const ContextSourceSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("raw"), code: z.string() }),
+  z.object({ type: z.literal("git_ref"), ref: z.string(), root: z.string().optional() }),
+  z.object({ type: z.literal("file_list"), paths: z.array(z.string()), root: z.string().optional() }),
+  z.object({ type: z.literal("git_range"), from: z.string(), to: z.string(), root: z.string().optional() }),
+  z.object({ type: z.literal("patch_file"), path: z.string() }),
+]);
 
 export type ContextSource = z.infer<typeof ContextSourceSchema>;
 

@@ -21,13 +21,11 @@ Add end-to-end integration tests for MCP protocol interactions and implement env
 ```
 tests/integration/
 ├── helpers/
-│   ├── mock-server.ts      # MCP server test harness
 │   ├── mock-adapter.ts     # Configurable mock agent
 │   └── fixtures.ts         # Test data (code samples, debates)
 ├── debate.test.ts          # arena_debate workflow
 ├── review.test.ts          # arena_review workflow
 ├── challenge.test.ts       # arena_challenge workflow
-├── judge.test.ts           # arena_judge workflow
 └── health.test.ts          # arena_health checks
 ```
 
@@ -93,13 +91,11 @@ const ConfigSchema = z.object({
 
 | File | Action | Description |
 |------|--------|-------------|
-| `tests/integration/helpers/mock-server.ts` | new | MCP server test harness |
 | `tests/integration/helpers/mock-adapter.ts` | new | Configurable mock agent adapter |
 | `tests/integration/helpers/fixtures.ts` | new | Test data and utilities |
 | `tests/integration/debate.test.ts` | new | Debate workflow integration tests |
 | `tests/integration/review.test.ts` | new | Review workflow integration tests |
 | `tests/integration/challenge.test.ts` | new | Challenge workflow integration tests |
-| `tests/integration/judge.test.ts` | new | Judge workflow integration tests |
 | `tests/integration/health.test.ts` | new | Health check integration tests |
 | `src/config.ts` | new | Zod-based config validation |
 | `src/constants.ts` | modify | Re-export from config.ts for backward compat |

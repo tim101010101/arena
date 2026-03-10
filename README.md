@@ -44,23 +44,20 @@ npm install -g @anthropic-ai/claude-cli
 # Codex CLI (required for codex agent)
 npm install -g @codex-ai/cli
 
-# OpenAI CLI (required for openai agent)
-pip install openai-cli
-
-# Gemini CLI (required for gemini agent)
-# Follow Google's installation guide
+# Note: OpenAI and Gemini agents use codex CLI as adapter
+# No separate openai-cli or gemini-cli installation needed
 ```
 
 ### Install Arena MCP
 
-#### From GitHub Release (Recommended)
+#### From GitHub (Recommended)
 
 ```bash
-# Install from latest release tarball
-npm install -g https://github.com/tim101010101/arena/releases/latest/download/arena-mcp-v0.1.0.tgz
+# Install directly from GitHub
+bun install -g github:tim101010101/arena
 
-# Or install directly from git
-npm install -g git+https://github.com/tim101010101/arena.git
+# Or use with bunx (no installation needed)
+bunx --bun github:tim101010101/arena
 ```
 
 #### From Source
@@ -70,7 +67,7 @@ git clone https://github.com/tim101010101/arena.git
 cd arena
 bun install
 bun run build
-npm install -g .
+bun install -g .
 ```
 
 ### Configure MCP Client
@@ -90,14 +87,12 @@ Or use: Settings > Developer > Edit Config
 {
   "mcpServers": {
     "arena": {
-      "command": "arena-mcp",
+      "command": "bunx",
+      "args": ["--bun", "github:tim101010101/arena"],
       "env": {
         "ARENA_TIMEOUT_MS": "120000",
         "ARENA_DEFAULT_ROUNDS": "3",
-        "ARENA_DEFAULT_MODE": "parallel",
-        "ARENA_CLAUDE_MODEL": "claude-sonnet-4-6",
-        "ARENA_OPENAI_MODEL": "gpt-4",
-        "ARENA_GEMINI_MODEL": "gemini-pro"
+        "ARENA_DEFAULT_MODE": "parallel"
       }
     }
   }
@@ -106,17 +101,20 @@ Or use: Settings > Developer > Edit Config
 
 #### Claude Code CLI
 
-Use the CLI command or edit the configuration file:
+Use the CLI command to add the MCP server:
 
 ```bash
-# Using CLI (recommended)
-claude mcp add arena --scope user
+# If installed globally
+claude mcp add arena arena-mcp
 
-# Or edit manually:
-# ~/Library/Application Support/Claude/claude_desktop_config.json (macOS)
-# %APPDATA%\Claude\claude_desktop_config.json (Windows)
-# ~/.config/Claude/claude_desktop_config.json (Linux)
+# Or specify full path to dist/index.js
+claude mcp add arena bun /path/to/arena-mcp/dist/index.js
 ```
+
+To configure environment variables, edit your Claude Code config file manually:
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+- **Linux**: `~/.config/Claude/claude_desktop_config.json`
 
 Configuration format is the same as Claude Desktop.
 
@@ -136,10 +134,10 @@ All configuration is done through environment variables in the MCP client config
 | `ARENA_DEFAULT_ROUNDS` | Default rounds for debates/challenges | `3` | 1-10 |
 | `ARENA_DEFAULT_MODE` | Execution mode | `parallel` | `sequential`, `parallel` |
 | `ARENA_MAX_CONTEXT_SIZE` | Maximum context size | `1000000` | 100000-10000000 |
-| `ARENA_CLAUDE_MODEL` | Claude model override | (CLI default) | e.g., `claude-sonnet-4-6` |
-| `ARENA_CODEX_MODEL` | Codex model override | (CLI default) | - |
-| `ARENA_GEMINI_MODEL` | Gemini model override | (CLI default) | e.g., `gemini-pro` |
-| `ARENA_OPENAI_MODEL` | OpenAI model override | (CLI default) | e.g., `gpt-4` |
+| `ARENA_CLAUDE_MODEL` | Claude model override | (CLI default) | See Claude CLI docs for current models |
+| `ARENA_CODEX_MODEL` | Codex model override | (CLI default) | See Codex CLI docs for current models |
+| `ARENA_GEMINI_MODEL` | Gemini model override | (CLI default) | See Gemini docs for current models |
+| `ARENA_OPENAI_MODEL` | OpenAI model override | (CLI default) | See OpenAI docs for current models |
 
 ### Example Configuration
 
@@ -151,9 +149,7 @@ All configuration is done through environment variables in the MCP client config
       "env": {
         "ARENA_TIMEOUT_MS": "180000",
         "ARENA_DEFAULT_ROUNDS": "5",
-        "ARENA_DEFAULT_MODE": "sequential",
-        "ARENA_CLAUDE_MODEL": "claude-opus-4-6",
-        "ARENA_OPENAI_MODEL": "gpt-4-turbo"
+        "ARENA_DEFAULT_MODE": "sequential"
       }
     }
   }
@@ -227,27 +223,6 @@ arena_judge({
   criteria: ["evidence quality", "logical coherence", "practical feasibility"]
 })
 ```
-
-## Configuration
-
-### Environment Variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `ARENA_TIMEOUT_MS` | `120000` | Max execution time per agent (ms) |
-| `ARENA_DEFAULT_ROUNDS` | `3` | Default number of debate/challenge rounds |
-| `ARENA_DEFAULT_MODE` | `parallel` | Default execution mode (`sequential` or `parallel`) |
-| `ARENA_CLAUDE_MODEL` | - | Claude model to use (e.g., `claude-sonnet-4-6`) |
-| `ARENA_CODEX_MODEL` | - | Codex model to use |
-| `ARENA_GEMINI_MODEL` | - | Gemini model to use |
-| `ARENA_OPENAI_MODEL` | - | OpenAI model to use |
-
-### Agent IDs
-
-- `claude` - Anthropic Claude via CLI
-- `codex` - Codex via CLI
-- `openai` - OpenAI via CLI
-- `gemini` - Google Gemini via CLI
 
 ## Architecture
 

@@ -21,9 +21,10 @@ Currently, parallel mode executes all agent requests simultaneously without any 
 
 ## End-to-End Integration Tests
 
-- **Status**: 🔴 Pending
+- **Status**: ✅ Completed
 - **Priority**: 🟡 Medium
 - **Created**: 2026-03-10
+- **Completed**: 2026-03-10
 - **Tags**: testing, quality, ci
 
 ### Background
@@ -32,13 +33,14 @@ Current test suite only covers unit tests for individual modules. Missing integr
 
 ### Action Items
 
-- [ ] Create tests/integration/ directory
-- [ ] Add MCP server lifecycle tests (startup, shutdown, error handling)
-- [ ] Test complete debate workflow with mock agents
-- [ ] Test complete review workflow with mock code sources
-- [ ] Test complete challenge workflow
-- [ ] Test session persistence across multiple rounds
-- [ ] Add integration tests to CI pipeline
+- [x] Create tests/integration/ directory
+- [x] Add MCP server lifecycle tests (startup, shutdown, error handling)
+- [x] Test complete debate workflow with mock agents
+- [x] Test complete review workflow with mock code sources
+- [x] Test complete challenge workflow
+- [x] Test session persistence across multiple rounds
+- [ ] Test arena_judge workflow (missing)
+- [x] Add integration tests to CI pipeline
 
 ## Structured Logging System
 
@@ -64,9 +66,10 @@ Currently only basic console.error logging exists. Production deployments need s
 
 ## Environment Variable Validation
 
-- **Status**: 🔴 Pending
+- **Status**: ✅ Completed
 - **Priority**: 🟡 Medium
 - **Created**: 2026-03-10
+- **Completed**: 2026-03-10
 - **Tags**: config, reliability, dx
 
 ### Background
@@ -75,12 +78,12 @@ Environment variables in src/constants.ts are read directly without validation. 
 
 ### Action Items
 
-- [ ] Create src/config.ts with Zod schemas for all env vars
-- [ ] Validate ARENA_TIMEOUT_MS (number, min: 1000, max: 600000)
-- [ ] Validate ARENA_DEFAULT_ROUNDS (number, min: 1, max: 10)
-- [ ] Validate ARENA_DEFAULT_MODE (enum: sequential|parallel)
-- [ ] Validate ARENA_*_MODEL strings (non-empty if provided)
-- [ ] Add helpful error messages for invalid configs
-- [ ] Validate on server startup, fail fast with clear errors
-- [ ] Add tests for config validation
-- [ ] Update documentation with all available env vars
+- [x] Create src/config.ts with Zod schemas for all env vars
+- [x] Validate ARENA_TIMEOUT_MS (number, min: 1000, max: 600000)
+- [x] Validate ARENA_DEFAULT_ROUNDS (number, min: 1, max: 10)
+- [x] Validate ARENA_DEFAULT_MODE (enum: sequential|parallel)
+- [x] Validate ARENA_*_MODEL strings (non-empty if provided)
+- [x] Add helpful error messages for invalid configs
+- [x] Validate on server startup, fail fast with clear errors
+- [x] Add tests for config validation
+- [x] Update documentation with all available env vars

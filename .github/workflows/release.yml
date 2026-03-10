@@ -35,14 +35,18 @@ jobs:
           body: |
             ## Installation
 
-            ### From tarball
+            ### From GitHub (Recommended)
             ```bash
-            npm install -g https://github.com/tim101010101/arena/releases/download/${{ github.ref_name }}/arena-mcp-${{ github.ref_name }}.tgz
+            # Install globally
+            bun install -g github:tim101010101/arena
+
+            # Or use with bunx (no installation needed)
+            bunx --bun github:tim101010101/arena
             ```
 
-            ### From git
+            ### From tarball
             ```bash
-            npm install -g git+https://github.com/tim101010101/arena.git#${{ github.ref_name }}
+            bun install -g https://github.com/tim101010101/arena/releases/download/${{ github.ref_name }}/arena-mcp-${{ github.ref_name }}.tgz
             ```
 
             ### Claude Desktop Configuration
@@ -50,7 +54,8 @@ jobs:
             {
               "mcpServers": {
                 "arena": {
-                  "command": "arena-mcp",
+                  "command": "bunx",
+                  "args": ["--bun", "github:tim101010101/arena"],
                   "env": {
                     "ANTHROPIC_API_KEY": "your-key",
                     "OPENAI_API_KEY": "your-key",

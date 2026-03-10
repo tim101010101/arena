@@ -2,16 +2,26 @@ import { unlink, mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const STRIP_ENV_KEYS = [
-  "CLAUDECODE",
-  "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY",
-  "http_proxy", "https_proxy", "all_proxy",
+const ALLOWED_ENV_KEYS = [
+  "PATH",
+  "HOME",
+  "USER",
+  "SHELL",
+  "LANG",
+  "LC_ALL",
+  "ANTHROPIC_API_KEY",
+  "OPENAI_API_KEY",
+  "GEMINI_API_KEY",
+  "CODEX_API_KEY",
 ];
 
 export function agentEnv(): Record<string, string> {
-  const env = { ...process.env, DISABLE_AUTOUPDATER: "1" };
-  for (const key of STRIP_ENV_KEYS) delete (env as Record<string, string | undefined>)[key];
-  return env as Record<string, string>;
+  const env: Record<string, string> = { DISABLE_AUTOUPDATER: "1" };
+  for (const key of ALLOWED_ENV_KEYS) {
+    const val = process.env[key];
+    if (val !== undefined) env[key] = val;
+  }
+  return env;
 }
 
 export function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {

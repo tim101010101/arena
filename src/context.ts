@@ -1,10 +1,23 @@
 import { readFile } from "node:fs/promises";
+import { resolve, relative } from "node:path";
 import type { ContextSource } from "./types";
 import { MAX_CONTEXT_SIZE } from "./config";
 
 export interface AcquiredContext {
   content: string;
   metadata: { source_type: string; size_bytes: number; file_count?: number };
+}
+
+function validatePath(path: string, root: string): string {
+  if (path.startsWith("/")) {
+    throw new Error(`Absolute paths not allowed: ${path}`);
+  }
+  const fullPath = resolve(root, path);
+  const rel = relative(root, fullPath);
+  if (rel.startsWith("..") || resolve(root, rel) !== fullPath) {
+    throw new Error(`Path escapes workspace: ${path}`);
+  }
+  return fullPath;
 }
 
 export async function acquireContext(sources: ContextSource[]): Promise<AcquiredContext> {
@@ -17,13 +30,13 @@ export async function acquireContext(sources: ContextSource[]): Promise<Acquired
 
     switch (source.type) {
       case "raw":
-        content = source.code ?? "";
+        content = source.code;
         break;
       case "file_list": {
         const root = source.root || process.cwd();
         const contents: string[] = [];
-        for (const p of source.paths ?? []) {
-          const fullPath = p.startsWith("/") ? p : `${root}/${p}`;
+        for (const p of source.paths) {
+          const fullPath = validatePath(p, root);
           try {
             const fc = await readFile(fullPath, "utf-8");
             contents.push(`=== ${p} ===\n${fc}\n`);
@@ -32,12 +45,12 @@ export async function acquireContext(sources: ContextSource[]): Promise<Acquired
           }
         }
         content = contents.join("\n");
-        fileCount += (source.paths ?? []).length;
+        fileCount += source.paths.length;
         break;
       }
       case "git_ref": {
         const root = source.root || process.cwd();
-        const proc = Bun.spawn(["git", "show", source.ref!], { cwd: root, stdout: "pipe", stderr: "pipe" });
+        const proc = Bun.spawn(["git", "show", source.ref], { cwd: root, stdout: "pipe", stderr: "pipe" });
         const [stdout, stderr] = await Promise.all([new Response(proc.stdout).text(), new Response(proc.stderr).text()]);
         if (await proc.exited !== 0) throw new Error(`git show failed: ${stderr.slice(0, 200)}`);
         content = stdout;
@@ -45,16 +58,19 @@ export async function acquireContext(sources: ContextSource[]): Promise<Acquired
       }
       case "git_range": {
         const root = source.root || process.cwd();
-        const proc = Bun.spawn(["git", "diff", source.from!, source.to!], { cwd: root, stdout: "pipe", stderr: "pipe" });
+        const proc = Bun.spawn(["git", "diff", source.from, source.to], { cwd: root, stdout: "pipe", stderr: "pipe" });
         const [stdout, stderr] = await Promise.all([new Response(proc.stdout).text(), new Response(proc.stderr).text()]);
         if (await proc.exited !== 0) throw new Error(`git diff failed: ${stderr.slice(0, 200)}`);
         content = stdout;
         break;
       }
-      case "patch_file":
-        try { content = await readFile(source.path!, "utf-8"); }
+      case "patch_file": {
+        const root = process.cwd();
+        const fullPath = validatePath(source.path, root);
+        try { content = await readFile(fullPath, "utf-8"); }
         catch (err) { throw new Error(`Failed to read patch file ${source.path}: ${err}`); }
         break;
+      }
       default:
         throw new Error(`Unsupported source type: ${(source as ContextSource).type}`);
     }
