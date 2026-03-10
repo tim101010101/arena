@@ -4,6 +4,12 @@
   "description": "Multi-agent AI arena for debates, code reviews, and red-team challenges via MCP",
   "type": "module",
   "main": "dist/index.js",
+  "bin": {
+    "arena-mcp": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
   "author": "",
   "license": "MIT",
   "keywords": [
@@ -27,7 +33,8 @@
   },
   "scripts": {
     "test": "bun test",
-    "build": "bun build src/index.ts --target=bun --outfile=dist/index.js --minify",
+    "test:integration": "bun test tests/integration",
+    "build": "bun build src/index.ts --target=bun --outfile=dist/index.js --minify && echo '#!/usr/bin/env bun' | cat - dist/index.js > dist/index.tmp && mv dist/index.tmp dist/index.js && chmod +x dist/index.js",
     "start": "bun dist/index.js",
     "dev": "bun --watch src/index.ts"
   },

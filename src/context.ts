@@ -1,12 +1,11 @@
 import { readFile } from "node:fs/promises";
 import type { ContextSource } from "./types";
+import { MAX_CONTEXT_SIZE } from "./config";
 
 export interface AcquiredContext {
   content: string;
   metadata: { source_type: string; size_bytes: number; file_count?: number };
 }
-
-const MAX_CONTEXT_SIZE = 1_000_000;
 
 export async function acquireContext(sources: ContextSource[]): Promise<AcquiredContext> {
   const parts: string[] = [];

@@ -1,0 +1,62 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install
+      - run: bun test
+      - run: bun run build
+
+      - name: Pack tarball
+        run: npm pack
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            arena-mcp-*.tgz
+            dist/index.js
+          generate_release_notes: true
+          body: |
+            ## Installation
+
+            ### From tarball
+            ```bash
+            npm install -g https://github.com/tim101010101/arena/releases/download/${{ github.ref_name }}/arena-mcp-${{ github.ref_name }}.tgz
+            ```
+
+            ### From git
+            ```bash
+            npm install -g git+https://github.com/tim101010101/arena.git#${{ github.ref_name }}
+            ```
+
+            ### Claude Desktop Configuration
+            ```json
+            {
+              "mcpServers": {
+                "arena": {
+                  "command": "arena-mcp",
+                  "env": {
+                    "ANTHROPIC_API_KEY": "your-key",
+                    "OPENAI_API_KEY": "your-key",
+                    "GEMINI_API_KEY": "your-key"
+                  }
+                }
+              }
+            }
+            ```
