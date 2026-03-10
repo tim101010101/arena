@@ -75,7 +75,16 @@ npm install -g .
 
 ### Configure MCP Client
 
-Add to your MCP client configuration (e.g., `~/.claude/claude_desktop_config.json`):
+Arena MCP works with any MCP-compatible client. Configuration examples:
+
+#### Claude Desktop
+
+Edit the configuration file:
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+- **Linux**: `~/.config/Claude/claude_desktop_config.json`
+
+Or use: Settings > Developer > Edit Config
 
 ```json
 {
@@ -95,39 +104,68 @@ Add to your MCP client configuration (e.g., `~/.claude/claude_desktop_config.jso
 }
 ```
 
+#### Claude Code CLI
+
+Use the CLI command or edit the configuration file:
+
+```bash
+# Using CLI (recommended)
+claude mcp add arena --scope user
+
+# Or edit manually:
+# ~/Library/Application Support/Claude/claude_desktop_config.json (macOS)
+# %APPDATA%\Claude\claude_desktop_config.json (Windows)
+# ~/.config/Claude/claude_desktop_config.json (Linux)
+```
+
+Configuration format is the same as Claude Desktop.
+
+#### Other MCP Clients
+
+For other MCP clients, refer to their documentation for MCP server configuration. The server command is `arena-mcp` and configuration is done via environment variables (see Configuration section below).
+
 Restart your MCP client to load the server.
 
 ## Configuration
-### Troubleshooting
 
-- **Build fails**: Ensure `bun` is installed (`curl -fsSL https://bun.sh/install | bash`)
-- **Config not found**: Ask user for their MCP config file location
-- **Tools not appearing**: User must restart their MCP client after config changes
+All configuration is done through environment variables in the MCP client configuration. Available options:
 
-</details>
+| Variable | Description | Default | Valid Range |
+|----------|-------------|---------|-------------|
+| `ARENA_TIMEOUT_MS` | Agent execution timeout (milliseconds) | `120000` | 1000-600000 |
+| `ARENA_DEFAULT_ROUNDS` | Default rounds for debates/challenges | `3` | 1-10 |
+| `ARENA_DEFAULT_MODE` | Execution mode | `parallel` | `sequential`, `parallel` |
+| `ARENA_MAX_CONTEXT_SIZE` | Maximum context size | `1000000` | 100000-10000000 |
+| `ARENA_CLAUDE_MODEL` | Claude model override | (CLI default) | e.g., `claude-sonnet-4-6` |
+| `ARENA_CODEX_MODEL` | Codex model override | (CLI default) | - |
+| `ARENA_GEMINI_MODEL` | Gemini model override | (CLI default) | e.g., `gemini-pro` |
+| `ARENA_OPENAI_MODEL` | OpenAI model override | (CLI default) | e.g., `gpt-4` |
 
-### Configure MCP Client
-
-Add to your MCP client configuration (e.g., Claude Desktop):
+### Example Configuration
 
 ```json
 {
   "mcpServers": {
     "arena": {
-      "command": "bun",
-      "args": ["run", "/path/to/arena/dist/index.js"],
+      "command": "arena-mcp",
       "env": {
-        "ARENA_TIMEOUT_MS": "120000",
-        "ARENA_DEFAULT_ROUNDS": "3",
-        "ARENA_DEFAULT_MODE": "parallel",
-        "ARENA_CLAUDE_MODEL": "claude-sonnet-4-6",
-        "ARENA_OPENAI_MODEL": "gpt-4",
-        "ARENA_GEMINI_MODEL": "gemini-pro"
+        "ARENA_TIMEOUT_MS": "180000",
+        "ARENA_DEFAULT_ROUNDS": "5",
+        "ARENA_DEFAULT_MODE": "sequential",
+        "ARENA_CLAUDE_MODEL": "claude-opus-4-6",
+        "ARENA_OPENAI_MODEL": "gpt-4-turbo"
       }
     }
   }
 }
 ```
+
+### Troubleshooting
+
+- **Build fails**: Ensure `bun` is installed (`curl -fsSL https://bun.sh/install | bash`)
+- **Tools not appearing**: Restart your MCP client after config changes
+- **Agent CLI not found**: Install the required CLI tools (see Prerequisites)
+- **Invalid config**: Check the error message for validation details
 
 ## Usage Examples
 
