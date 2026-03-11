@@ -36,7 +36,7 @@ function parseEnv(): Config {
     const errors = result.error.errors
       .map((e) => `  - ${e.path.join(".")}: ${e.message}`)
       .join("\n");
-    console.error(`[arena-mcp] Invalid config:\n${errors}`);
+    console.error(`[arena] Invalid config:\n${errors}`);
     process.exit(1);
   }
   return result.data;

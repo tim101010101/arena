@@ -118,10 +118,10 @@ Use the CLI command to add the MCP server:
 
 ```bash
 # If installed globally
-claude mcp add arena arena-mcp
+claude mcp add arena arena
 
 # Or specify full path to dist/index.js
-claude mcp add arena bun /path/to/arena-mcp/dist/index.js
+claude mcp add arena bun /path/to/arena/dist/index.js
 ```
 
 To configure environment variables, edit your Claude Code config file manually:
@@ -133,7 +133,7 @@ Configuration format is the same as Claude Desktop.
 
 #### Other MCP Clients
 
-For other MCP clients, refer to their documentation for MCP server configuration. The server command is `arena-mcp` and configuration is done via environment variables (see Configuration section below).
+For other MCP clients, refer to their documentation for MCP server configuration. The server command is `arena` and configuration is done via environment variables (see Configuration section below).
 
 Restart your MCP client to load the server.
 
@@ -158,7 +158,7 @@ All configuration is done through environment variables in the MCP client config
 {
   "mcpServers": {
     "arena": {
-      "command": "arena-mcp",
+      "command": "arena",
       "env": {
         "ARENA_TIMEOUT_MS": "180000",
         "ARENA_DEFAULT_ROUNDS": "5",

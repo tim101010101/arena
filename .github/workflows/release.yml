@@ -29,7 +29,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            arena-mcp-*.tgz
+            arena-*.tgz
             dist/index.js
           generate_release_notes: true
           body: |
@@ -46,7 +46,7 @@ jobs:
 
             ### From tarball
             ```bash
-            bun install -g https://github.com/tim101010101/arena/releases/download/${{ github.ref_name }}/arena-mcp-${{ github.ref_name }}.tgz
+            bun install -g https://github.com/tim101010101/arena/releases/download/${{ github.ref_name }}/arena-${{ github.ref_name }}.tgz
             ```
 
             ### Claude Desktop Configuration

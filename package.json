@@ -1,11 +1,11 @@
 {
-  "name": "arena-mcp",
+  "name": "arena",
   "version": "0.1.1",
   "description": "Multi-agent AI arena for debates, code reviews, and red-team challenges via MCP",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "arena-mcp": "./dist/index.js"
+    "arena": "./dist/index.js"
   },
   "files": [
     "dist"

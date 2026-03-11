@@ -209,4 +209,4 @@ server.tool(
 // Start server
 const transport = new StdioServerTransport();
 await server.connect(transport);
-console.error("[arena-mcp] server running on stdio (v0.1.0)");
+console.error("[arena] server running on stdio (v0.1.0)");

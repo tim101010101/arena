@@ -9,7 +9,7 @@ if ! command -v bun &>/dev/null; then
 fi
 
 if [ ! -f dist/index.js ]; then
-  echo "[arena-mcp] Building..." >&2
+  echo "[arena] Building..." >&2
   bun run build
 fi
 
