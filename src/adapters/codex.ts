@@ -17,21 +17,16 @@ export class CodexAdapter implements AgentAdapter {
     }
   }
 
-  buildArgs(model: string, outputFile: string, prompt: string): string[] {
-    return [
-      "codex", "exec",
-      "--full-auto",
-      "--skip-git-repo-check",
-      "-s", "read-only",
-      "-m", model,
-      "-o", outputFile,
-      prompt,
-    ];
+  buildArgs(model: string | undefined, outputFile: string, prompt: string): string[] {
+    const args = ["codex", "exec", "--full-auto", "--skip-git-repo-check", "-s", "read-only"];
+    if (model) args.push("-m", model);
+    args.push("-o", outputFile, prompt);
+    return args;
   }
 
   async execute(req: AgentRequest): Promise<AgentResponse> {
     const t0 = Date.now();
-    const model = AGENT_MODELS.codex || "gpt-5.3-codex";
+    const model = AGENT_MODELS.codex;
     const timeout = req.timeout_ms || ARENA_TIMEOUT_MS;
     const tmpFile = await makeTempFile("codex");
 

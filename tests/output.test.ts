@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { parseStructuredOutput, formatDebateTranscript, formatReviewOutput } from "../src/output";
+import { parseStructuredOutput, formatDebateTranscript, formatReviewOutput, formatChallengeTranscript } from "../src/output";
 import type { Session } from "../src/session";
 
 describe("parseStructuredOutput", () => {
@@ -17,11 +17,24 @@ describe("parseStructuredOutput", () => {
     expect(result.findings).toHaveLength(1);
   });
 
-  test("should fallback to prose", () => {
+  test("should fallback to prose on invalid JSON", () => {
     const raw = "This is just plain text review";
     const result = parseStructuredOutput(raw);
     expect(result.findings).toEqual([]);
     expect(result.summary).toBe(raw);
+  });
+
+  test("should handle malformed JSON in code block", () => {
+    const raw = "```json\n{invalid}\n```";
+    const result = parseStructuredOutput(raw);
+    expect(result.findings).toEqual([]);
+  });
+
+  test("should handle JSON without findings array", () => {
+    const raw = '{"findings":[],"summary":"no issues found"}';
+    const result = parseStructuredOutput(raw);
+    expect(result.findings).toEqual([]);
+    expect(result.summary).toBe("no issues found");
   });
 });
 
@@ -50,6 +63,30 @@ describe("formatDebateTranscript", () => {
     expect(output).toContain("GraphQL is flexible");
     expect(output).toContain("arena-test-123");
   });
+
+  test("should show error in response", () => {
+    const session: Session = {
+      id: "arena-err",
+      tool: "debate",
+      agents: ["claude"],
+      created_at: Date.now(),
+      rounds: [{ round: 1, responses: [{ content: "", agent: "claude", latency_ms: 100, error: "timeout" }] }],
+    };
+    expect(formatDebateTranscript(session)).toContain("**Error**: timeout");
+  });
+
+  test("should omit model from header when not present", () => {
+    const session: Session = {
+      id: "arena-nomodel",
+      tool: "debate",
+      agents: ["claude"],
+      created_at: Date.now(),
+      rounds: [{ round: 1, responses: [{ content: "hi", agent: "claude", latency_ms: 50 }] }],
+    };
+    const output = formatDebateTranscript(session);
+    expect(output).toContain("### claude — 50ms");
+    expect(output).not.toContain("claude (");
+  });
 });
 
 describe("formatReviewOutput", () => {
@@ -75,11 +112,41 @@ describe("formatReviewOutput", () => {
     expect(parsed.agents[0].findings).toHaveLength(1);
   });
 
-  test("should handle error responses", () => {
-    const responses = [
-      { content: "", agent: "gemini", latency_ms: 0, error: "CLI not found" },
-    ];
-    const output = formatReviewOutput(responses, "prose");
-    expect(output).toContain("**Error**: CLI not found");
+  test("should handle error responses in prose", () => {
+    const responses = [{ content: "", agent: "gemini", latency_ms: 0, error: "CLI not found" }];
+    expect(formatReviewOutput(responses, "prose")).toContain("**Error**: CLI not found");
+  });
+
+  test("should handle error responses in JSON", () => {
+    const responses = [{ content: "", agent: "gemini", latency_ms: 0, error: "CLI not found" }];
+    const parsed = JSON.parse(formatReviewOutput(responses, "json"));
+    expect(parsed.agents[0].findings).toEqual([]);
+    expect(parsed.agents[0].raw).toBe("CLI not found");
+  });
+});
+
+describe("formatChallengeTranscript", () => {
+  test("should label defender and challengers", () => {
+    const session: Session = {
+      id: "arena-challenge-1",
+      tool: "challenge",
+      agents: ["claude", "codex"],
+      created_at: Date.now(),
+      metadata: { assertion: "TypeScript is better than JavaScript", defender: "claude", challengers: ["codex"] },
+      rounds: [{
+        round: 1,
+        responses: [
+          { content: "TS adds safety", agent: "claude", latency_ms: 1000 },
+          { content: "JS is more flexible", agent: "codex", latency_ms: 1100 },
+        ],
+      }],
+    };
+    const output = formatChallengeTranscript(session);
+    expect(output).toContain("# Arena Challenge: TypeScript is better than JavaScript");
+    expect(output).toContain("Defender: claude");
+    expect(output).toContain("Challengers: codex");
+    expect(output).toContain("🛡️ Defender: claude");
+    expect(output).toContain("⚔️ Challenger: codex");
+    expect(output).toContain("_Session: arena-challenge-1_");
   });
 });
