@@ -2,26 +2,8 @@ import { unlink, mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const ALLOWED_ENV_KEYS = [
-  "PATH",
-  "HOME",
-  "USER",
-  "SHELL",
-  "LANG",
-  "LC_ALL",
-  "ANTHROPIC_API_KEY",
-  "OPENAI_API_KEY",
-  "GEMINI_API_KEY",
-  "CODEX_API_KEY",
-];
-
 export function agentEnv(): Record<string, string> {
-  const env: Record<string, string> = { DISABLE_AUTOUPDATER: "1" };
-  for (const key of ALLOWED_ENV_KEYS) {
-    const val = process.env[key];
-    if (val !== undefined) env[key] = val;
-  }
-  return env;
+  return { ...process.env, DISABLE_AUTOUPDATER: "1" } as Record<string, string>;
 }
 
 export function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
