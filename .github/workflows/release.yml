@@ -18,12 +18,22 @@ jobs:
         with:
           bun-version: latest
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
       - run: bun install
       - run: bun test
       - run: bun run build
 
       - name: Pack tarball
         run: npm pack
+
+      - name: Publish to npm
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -35,27 +45,21 @@ jobs:
           body: |
             ## Installation
 
-            ### From GitHub (Recommended)
             ```bash
-            # Install globally
-            bun install -g github:tim101010101/arena
+            # Run directly (no install needed)
+            npx arena
 
-            # Or use with bunx (no installation needed)
-            bunx --bun github:tim101010101/arena
+            # Or install globally
+            npm install -g arena
             ```
 
-            ### From tarball
-            ```bash
-            bun install -g https://github.com/tim101010101/arena/releases/download/${{ github.ref_name }}/arena-${{ github.ref_name }}.tgz
-            ```
-
-            ### Claude Desktop Configuration
+            ### Claude Desktop / Kiro Configuration
             ```json
             {
               "mcpServers": {
                 "arena": {
-                  "command": "bunx",
-                  "args": ["--bun", "github:tim101010101/arena"],
+                  "command": "npx",
+                  "args": ["-y", "arena"],
                   "env": {
                     "ANTHROPIC_API_KEY": "your-key",
                     "OPENAI_API_KEY": "your-key",

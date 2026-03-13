@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { agentEnv, withTimeout, makeTempFile, cleanupTempFile, whichBinary, readStderr } from "../src/utils";
+import { agentEnv, withTimeout, makeTempFile, cleanupTempFile, whichBinary, readStderr, spawnProcess } from "../src/utils";
 import { unlink, access } from "node:fs/promises";
 
 describe("agentEnv", () => {
@@ -80,7 +80,7 @@ describe("whichBinary", () => {
 
 describe("readStderr", () => {
   test("should read stderr stream", async () => {
-    const proc = Bun.spawn(["sh", "-c", "echo 'error message' >&2"], {
+    const proc = spawnProcess(["sh", "-c", "echo 'error message' >&2"], {
       stderr: "pipe",
       stdout: "ignore",
     });
@@ -89,7 +89,7 @@ describe("readStderr", () => {
   });
 
   test("should return empty string for empty stderr", async () => {
-    const proc = Bun.spawn(["echo", "test"], {
+    const proc = spawnProcess(["echo", "test"], {
       stderr: "pipe",
       stdout: "ignore",
     });

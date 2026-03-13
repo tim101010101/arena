@@ -34,10 +34,10 @@
   "scripts": {
     "test": "bun test",
     "test:integration": "bun test tests/integration",
-    "build": "bun build src/index.ts --target=bun --outfile=dist/index.js --minify && echo '#!/usr/bin/env bun' | cat - dist/index.js > dist/index.tmp && mv dist/index.tmp dist/index.js && chmod +x dist/index.js",
+    "build": "node --input-type=module -e \"\" 2>/dev/null; bun build src/index.ts --target=node --outfile=dist/index.js --minify && printf '#!/usr/bin/env node\\n' | cat - dist/index.js > dist/index.tmp && mv dist/index.tmp dist/index.js && chmod +x dist/index.js",
     "prepare": "bun run build",
     "prepack": "bun run build",
-    "start": "bun dist/index.js",
+    "start": "node dist/index.js",
     "dev": "bun --watch src/index.ts"
   },
   "dependencies": {
@@ -45,9 +45,10 @@
     "zod": "^3.24.0"
   },
   "devDependencies": {
-    "@types/bun": "^1.2.0"
+    "@types/bun": "^1.2.0",
+    "@types/node": "^22.0.0"
   },
   "engines": {
-    "bun": ">=1.0.0"
+    "node": ">=18.0.0"
   }
 }

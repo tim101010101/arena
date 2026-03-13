@@ -1,5 +1,5 @@
 import type { AgentAdapter, AgentRequest, AgentResponse, HealthResult } from "./base";
-import { agentEnv, withTimeout, makeTempFile, cleanupTempFile, readStderr, whichBinary } from "../utils";
+import { agentEnv, withTimeout, makeTempFile, cleanupTempFile, readStderr, readFileText, whichBinary, spawnProcess } from "../utils";
 import { ARENA_TIMEOUT_MS, AGENT_MODELS } from "../constants";
 
 export class CodexAdapter implements AgentAdapter {
@@ -40,13 +40,14 @@ export class CodexAdapter implements AgentAdapter {
 
     const args = this.buildArgs(model, tmpFile, prompt);
 
-    const proc = Bun.spawn(args, {
+    const proc = spawnProcess(args, {
       cwd: req.cwd || process.cwd(),
-      stdin: "ignore",
       stdout: "ignore",
       stderr: "pipe",
       env: agentEnv(),
     });
+
+    const stderrPromise = readStderr(proc);
 
     try {
       await withTimeout(proc.exited, timeout, "codex");
@@ -57,13 +58,13 @@ export class CodexAdapter implements AgentAdapter {
     }
 
     if (proc.exitCode !== 0) {
-      const stderr = await readStderr(proc);
+      const stderr = await stderrPromise;
       await cleanupTempFile(tmpFile);
       return { content: "", agent: this.id, latency_ms: Date.now() - t0, error: `codex exited ${proc.exitCode}: ${stderr.slice(0, 200)}` };
     }
 
     let content = "";
-    try { content = await Bun.file(tmpFile).text(); } catch { /* ignore */ }
+    try { content = await readFileText(tmpFile); } catch { /* ignore */ }
     await cleanupTempFile(tmpFile);
 
     if (!content.trim()) {

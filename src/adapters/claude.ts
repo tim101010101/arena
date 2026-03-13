@@ -1,6 +1,6 @@
 import type { AgentAdapter, AgentRequest, AgentResponse, HealthResult } from "./base";
-import { agentEnv, withTimeout, readStderr, whichBinary } from "../utils";
-import { ARENA_TIMEOUT_MS, AGENT_MODELS, HEALTH_CHECK_TIMEOUT_MS } from "../constants";
+import { agentEnv, withTimeout, readStdout, readStderr, whichBinary, spawnProcess } from "../utils";
+import { ARENA_TIMEOUT_MS, AGENT_MODELS } from "../constants";
 
 export class ClaudeAdapter implements AgentAdapter {
   readonly id = "claude";
@@ -39,13 +39,15 @@ export class ClaudeAdapter implements AgentAdapter {
     const timeout = req.timeout_ms || ARENA_TIMEOUT_MS;
     const args = this.buildArgs(req);
 
-    const proc = Bun.spawn(args, {
+    const proc = spawnProcess(args, {
       cwd: req.cwd || process.cwd(),
-      stdin: "ignore",
       stdout: "pipe",
       stderr: "pipe",
       env: agentEnv(),
     });
+
+    const stdoutPromise = readStdout(proc);
+    const stderrPromise = readStderr(proc);
 
     try {
       await withTimeout(proc.exited, timeout, "claude");
@@ -55,11 +57,11 @@ export class ClaudeAdapter implements AgentAdapter {
     }
 
     if (proc.exitCode !== 0) {
-      const stderr = await readStderr(proc);
+      const stderr = await stderrPromise;
       return { content: "", agent: this.id, latency_ms: Date.now() - t0, error: `claude exited ${proc.exitCode}: ${stderr.slice(0, 200)}` };
     }
 
-    const content = await new Response(proc.stdout).text();
+    const content = await stdoutPromise;
     if (!content.trim()) {
       return { content: "", agent: this.id, latency_ms: Date.now() - t0, error: "claude returned empty response" };
     }

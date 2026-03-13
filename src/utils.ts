@@ -1,6 +1,75 @@
-import { unlink, mkdtemp } from "node:fs/promises";
+import { unlink, mkdtemp, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { spawn as nodeSpawn } from "node:child_process";
+
+export interface SpawnedProcess {
+  exited: Promise<void>;
+  exitCode: number | null;
+  stdout: NodeJS.ReadableStream | null;
+  stderr: NodeJS.ReadableStream | null;
+  kill(signal?: number): void;
+}
+
+export function spawnProcess(
+  args: string[],
+  options: {
+    cwd?: string;
+    env?: Record<string, string>;
+    stdout?: "pipe" | "ignore";
+    stderr?: "pipe" | "ignore";
+  },
+): SpawnedProcess {
+  const [cmd, ...rest] = args;
+  const proc = nodeSpawn(cmd, rest, {
+    cwd: options.cwd,
+    env: options.env,
+    stdio: [
+      "ignore",
+      options.stdout === "ignore" ? "ignore" : "pipe",
+      options.stderr === "ignore" ? "ignore" : "pipe",
+    ],
+  });
+
+  let exitCode: number | null = null;
+  const exited = new Promise<void>((resolve) => {
+    proc.on("close", (code) => {
+      exitCode = code;
+      resolve();
+    });
+  });
+
+  return {
+    exited,
+    get exitCode() { return exitCode; },
+    stdout: proc.stdout,
+    stderr: proc.stderr,
+    kill: (signal?: number) => { proc.kill(signal ?? 9); },
+  };
+}
+
+function collectStream(stream: NodeJS.ReadableStream): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    stream.on("data", (chunk: Buffer) => chunks.push(chunk));
+    stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
+    stream.on("error", reject);
+  });
+}
+
+export async function readStdout(proc: SpawnedProcess): Promise<string> {
+  if (!proc.stdout) return "";
+  return collectStream(proc.stdout);
+}
+
+export async function readStderr(proc: SpawnedProcess): Promise<string> {
+  if (!proc.stderr) return "";
+  return collectStream(proc.stderr);
+}
+
+export async function readFileText(path: string): Promise<string> {
+  return readFile(path, "utf8");
+}
 
 export function agentEnv(): Record<string, string> {
   return { ...process.env, DISABLE_AUTOUPDATER: "1" } as Record<string, string>;
@@ -32,22 +101,10 @@ export function errorResult(err: unknown) {
 
 export async function whichBinary(name: string): Promise<boolean> {
   try {
-    const proc = Bun.spawn(["which", name], { stdout: "pipe", stderr: "ignore" });
+    const proc = spawnProcess(["which", name], { stdout: "ignore", stderr: "ignore" });
     await proc.exited;
     return proc.exitCode === 0;
   } catch {
     return false;
   }
-}
-
-export async function readStderr(proc: { stderr: ReadableStream<Uint8Array> }): Promise<string> {
-  const decoder = new TextDecoder();
-  const reader = proc.stderr.getReader();
-  let result = "";
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    result += decoder.decode(value, { stream: true });
-  }
-  return result;
 }
