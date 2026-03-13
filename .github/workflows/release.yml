@@ -49,10 +49,10 @@ jobs:
 
             ```bash
             # Run directly (no install needed)
-            npx arena
+            npx @tim101010101/arena
 
             # Or install globally
-            npm install -g arena
+            npm install -g @tim101010101/arena
             ```
 
             ### Claude Desktop / Kiro Configuration
@@ -61,7 +61,7 @@ jobs:
               "mcpServers": {
                 "arena": {
                   "command": "npx",
-                  "args": ["-y", "arena"],
+                  "args": ["-y", "@tim101010101/arena"],
                   "env": {
                     "ANTHROPIC_API_KEY": "your-key",
                     "OPENAI_API_KEY": "your-key",

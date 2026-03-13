@@ -63,14 +63,14 @@ npm install -g @codex-ai/cli
 
 ### Install Arena MCP
 
-#### From GitHub (Recommended)
+#### From npm (Recommended)
 
 ```bash
-# Install directly from GitHub
-bun install -g github:tim101010101/arena
+# Run directly (no install needed)
+npx @tim101010101/arena
 
-# Or use with bunx (no installation needed)
-bunx --bun github:tim101010101/arena
+# Or install globally
+npm install -g @tim101010101/arena
 ```
 
 #### From Source
@@ -100,8 +100,8 @@ Or use: Settings > Developer > Edit Config
 {
   "mcpServers": {
     "arena": {
-      "command": "bunx",
-      "args": ["--bun", "github:tim101010101/arena"],
+      "command": "npx",
+      "args": ["-y", "@tim101010101/arena"],
       "env": {
         "ARENA_TIMEOUT_MS": "120000",
         "ARENA_DEFAULT_ROUNDS": "3",
@@ -118,10 +118,10 @@ Use the CLI command to add the MCP server:
 
 ```bash
 # If installed globally
-claude mcp add arena arena
+claude mcp add arena @tim101010101/arena
 
-# Or specify full path to dist/index.js
-claude mcp add arena bun /path/to/arena/dist/index.js
+# Or use npx
+claude mcp add arena npx @tim101010101/arena
 ```
 
 To configure environment variables, edit your Claude Code config file manually:
