@@ -72,7 +72,10 @@ export async function readFileText(path: string): Promise<string> {
 }
 
 export function agentEnv(): Record<string, string> {
-  return { ...process.env, DISABLE_AUTOUPDATER: "1" } as Record<string, string>;
+  const env = { ...process.env, DISABLE_AUTOUPDATER: "1" } as Record<string, string>;
+  delete env.CLAUDECODE;
+  delete env.CLAUDE_CODE_ENTRYPOINT;
+  return env;
 }
 
 export function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {

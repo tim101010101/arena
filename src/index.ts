@@ -25,6 +25,8 @@ import {
 import {
   formatDebateTranscript, formatReviewOutput, formatChallengeTranscript,
 } from "./output";
+import { createRequire } from "module";
+const { version } = createRequire(import.meta.url)("../package.json");
 
 // Register all adapters
 registry.register(new ClaudeAdapter());
@@ -32,7 +34,7 @@ registry.register(new CodexAdapter());
 registry.register(new GeminiAdapter());
 registry.register(new OpenAIAdapter());
 
-const server = new McpServer({ name: "arena", version: "0.1.0" });
+const server = new McpServer({ name: "arena", version });
 
 // --- arena_health ---
 server.tool(
@@ -209,4 +211,4 @@ server.tool(
 // Start server
 const transport = new StdioServerTransport();
 await server.connect(transport);
-console.error("[arena] server running on stdio (v0.1.0)");
+console.error(`[arena] server running on stdio (v${version})`);
