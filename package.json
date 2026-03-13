@@ -1,6 +1,6 @@
 {
   "name": "arena-mcp",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Multi-agent AI arena for debates, code reviews, and red-team challenges via MCP",
   "type": "module",
   "main": "dist/index.js",
