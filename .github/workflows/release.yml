@@ -41,7 +41,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            arena-*.tgz
+            arena-mcp-*.tgz
             dist/index.js
           generate_release_notes: true
           body: |
@@ -49,10 +49,10 @@ jobs:
 
             ```bash
             # Run directly (no install needed)
-            npx @tim101010101/arena
+            npx arena-mcp
 
             # Or install globally
-            npm install -g @tim101010101/arena
+            npm install -g arena-mcp
             ```
 
             ### Claude Desktop / Kiro Configuration
@@ -61,7 +61,7 @@ jobs:
               "mcpServers": {
                 "arena": {
                   "command": "npx",
-                  "args": ["-y", "@tim101010101/arena"],
+                  "args": ["-y", "arena-mcp"],
                   "env": {
                     "ANTHROPIC_API_KEY": "your-key",
                     "OPENAI_API_KEY": "your-key",

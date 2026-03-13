@@ -67,10 +67,10 @@ npm install -g @codex-ai/cli
 
 ```bash
 # Run directly (no install needed)
-npx @tim101010101/arena
+npx arena-mcp
 
 # Or install globally
-npm install -g @tim101010101/arena
+npm install -g arena-mcp
 ```
 
 #### From Source
@@ -101,7 +101,7 @@ Or use: Settings > Developer > Edit Config
   "mcpServers": {
     "arena": {
       "command": "npx",
-      "args": ["-y", "@tim101010101/arena"],
+      "args": ["-y", "arena-mcp"],
       "env": {
         "ARENA_TIMEOUT_MS": "120000",
         "ARENA_DEFAULT_ROUNDS": "3",
@@ -118,10 +118,10 @@ Use the CLI command to add the MCP server:
 
 ```bash
 # If installed globally
-claude mcp add arena @tim101010101/arena
+claude mcp add arena arena-mcp
 
 # Or use npx
-claude mcp add arena npx @tim101010101/arena
+claude mcp add arena npx arena-mcp
 ```
 
 To configure environment variables, edit your Claude Code config file manually:

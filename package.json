@@ -1,5 +1,5 @@
 {
-  "name": "@tim101010101/arena",
+  "name": "arena-mcp",
   "version": "0.1.2",
   "description": "Multi-agent AI arena for debates, code reviews, and red-team challenges via MCP",
   "type": "module",
