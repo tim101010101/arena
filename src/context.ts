@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { resolve, relative } from "node:path";
 import type { ContextSource } from "./types";
 import { MAX_CONTEXT_SIZE } from "./config";
+import { spawnProcess, readStdout, readStderr } from "./utils";
 
 export interface AcquiredContext {
   content: string;
@@ -50,17 +51,19 @@ export async function acquireContext(sources: ContextSource[]): Promise<Acquired
       }
       case "git_ref": {
         const root = source.root || process.cwd();
-        const proc = Bun.spawn(["git", "show", source.ref], { cwd: root, stdout: "pipe", stderr: "pipe" });
-        const [stdout, stderr] = await Promise.all([new Response(proc.stdout).text(), new Response(proc.stderr).text()]);
-        if (await proc.exited !== 0) throw new Error(`git show failed: ${stderr.slice(0, 200)}`);
+        const proc = spawnProcess(["git", "show", source.ref], { cwd: root, stdout: "pipe", stderr: "pipe" });
+        const [stdout, stderr] = await Promise.all([readStdout(proc), readStderr(proc)]);
+        await proc.exited;
+        if (proc.exitCode !== 0) throw new Error(`git show failed: ${stderr.slice(0, 200)}`);
         content = stdout;
         break;
       }
       case "git_range": {
         const root = source.root || process.cwd();
-        const proc = Bun.spawn(["git", "diff", source.from, source.to], { cwd: root, stdout: "pipe", stderr: "pipe" });
-        const [stdout, stderr] = await Promise.all([new Response(proc.stdout).text(), new Response(proc.stderr).text()]);
-        if (await proc.exited !== 0) throw new Error(`git diff failed: ${stderr.slice(0, 200)}`);
+        const proc = spawnProcess(["git", "diff", source.from, source.to], { cwd: root, stdout: "pipe", stderr: "pipe" });
+        const [stdout, stderr] = await Promise.all([readStdout(proc), readStderr(proc)]);
+        await proc.exited;
+        if (proc.exitCode !== 0) throw new Error(`git diff failed: ${stderr.slice(0, 200)}`);
         content = stdout;
         break;
       }
