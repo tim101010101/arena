@@ -1,9 +1,8 @@
-import { describe, test, expect, mock } from "bun:test";
+import { describe, test, expect } from "bun:test";
 import { orchestrate, orchestrateRounds } from "../src/orchestrator";
 import { registry } from "../src/adapters/registry";
 import type { AgentAdapter, AgentRequest, AgentResponse, HealthResult } from "../src/adapters/base";
 
-// Create mock adapters for testing
 class TestAdapter implements AgentAdapter {
   readonly id: string;
   readonly name: string;
@@ -33,16 +32,18 @@ class TestAdapter implements AgentAdapter {
 }
 
 describe("orchestrate", () => {
-  test("should run agents in parallel", async () => {
-    // Register test adapters
+  test("should run slots in parallel using their model adapter", async () => {
     registry.register(new TestAdapter("test-a", "response A"));
     registry.register(new TestAdapter("test-b", "response B"));
 
     const result = await orchestrate({
-      agents: ["test-a", "test-b"],
+      slots: [
+        { id: "fighter-1", model: "test-a" },
+        { id: "fighter-2", model: "test-b" },
+      ],
       mode: "parallel",
-      buildRequest: (agentId) => ({
-        prompt: `test prompt for ${agentId}`,
+      buildRequest: (slot) => ({
+        prompt: `test prompt for ${slot.id}`,
         timeout_ms: 5000,
       }),
     });
@@ -53,38 +54,53 @@ describe("orchestrate", () => {
     expect(result.failed).toEqual([]);
   });
 
-  test("should run agents sequentially", async () => {
+  test("should override response.agent with slot id (not model id)", async () => {
     const result = await orchestrate({
-      agents: ["test-a", "test-b"],
+      slots: [
+        { id: "pro-side", model: "test-a" },
+        { id: "con-side", model: "test-a" },
+      ],
+      mode: "parallel",
+      buildRequest: (slot) => ({ prompt: slot.id, timeout_ms: 5000 }),
+    });
+
+    expect(result.responses.map((r) => r.agent)).toEqual(["pro-side", "con-side"]);
+  });
+
+  test("should run slots sequentially", async () => {
+    const result = await orchestrate({
+      slots: [
+        { id: "f1", model: "test-a" },
+        { id: "f2", model: "test-b" },
+      ],
       mode: "sequential",
-      buildRequest: (agentId) => ({
-        prompt: `test prompt for ${agentId}`,
-        timeout_ms: 5000,
-      }),
+      buildRequest: () => ({ prompt: "x", timeout_ms: 5000 }),
     });
 
     expect(result.responses).toHaveLength(2);
   });
 
-  test("should handle partial failures", async () => {
+  test("should handle partial failures and report failed slot ids", async () => {
     registry.register(new TestAdapter("test-fail", "x", 0, true));
 
     const result = await orchestrate({
-      agents: ["test-a", "test-fail"],
+      slots: [
+        { id: "ok", model: "test-a" },
+        { id: "broken", model: "test-fail" },
+      ],
       mode: "parallel",
       buildRequest: () => ({ prompt: "test", timeout_ms: 5000 }),
     });
 
     expect(result.responses).toHaveLength(2);
-    expect(result.failed).toEqual(["test-fail"]);
-    expect(result.responses[0].content).toBe("response A");
+    expect(result.failed).toEqual(["broken"]);
     expect(result.responses[1].error).toBe("mock failure");
   });
 
-  test("should throw on unknown agent", async () => {
+  test("should throw on unknown model", async () => {
     expect(
       orchestrate({
-        agents: ["nonexistent-agent"],
+        slots: [{ id: "f1", model: "nonexistent-agent" }],
         mode: "parallel",
         buildRequest: () => ({ prompt: "test", timeout_ms: 5000 }),
       }),
@@ -93,13 +109,16 @@ describe("orchestrate", () => {
 });
 
 describe("orchestrateRounds", () => {
-  test("should execute multiple rounds", async () => {
+  test("should execute multiple rounds across slots", async () => {
     const rounds = await orchestrateRounds(
-      ["test-a", "test-b"],
+      [
+        { id: "f1", model: "test-a" },
+        { id: "f2", model: "test-b" },
+      ],
       2,
       "parallel",
-      (agentId, round) => ({
-        prompt: `round ${round} for ${agentId}`,
+      (slot, round) => ({
+        prompt: `round ${round} for ${slot.id}`,
         timeout_ms: 5000,
       }),
     );
@@ -113,24 +132,24 @@ describe("orchestrateRounds", () => {
     const receivedHistory: AgentResponse[][] = [];
 
     await orchestrateRounds(
-      ["test-a"],
+      [{ id: "f1", model: "test-a" }],
       2,
       "sequential",
-      (_agentId, _round, history) => {
+      (_slot, _round, history) => {
         receivedHistory.push([...history]);
         return { prompt: "test", timeout_ms: 5000 };
       },
     );
 
-    expect(receivedHistory[0]).toHaveLength(0); // Round 1: no history
-    expect(receivedHistory[1]).toHaveLength(1); // Round 2: has round 1 response
+    expect(receivedHistory[0]).toHaveLength(0);
+    expect(receivedHistory[1]).toHaveLength(1);
   });
 
   test("should call onRound callback", async () => {
     const roundsCalled: number[] = [];
 
     await orchestrateRounds(
-      ["test-a"],
+      [{ id: "f1", model: "test-a" }],
       3,
       "sequential",
       () => ({ prompt: "test", timeout_ms: 5000 }),

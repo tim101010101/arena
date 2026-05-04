@@ -1,4 +1,4 @@
-# Arena MCP
+# Arena
 
 ```
                          █████╗ ██████╗ ███████╗███╗   ██╗ █████╗
@@ -13,88 +13,68 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Version](https://img.shields.io/github/v/release/tim101010101/arena)](https://github.com/tim101010101/arena/releases)
 
-A Model Context Protocol (MCP) server that enables multi-agent AI competitions and collaborations. Run debates, code reviews, red-team challenges, and evaluations across different AI models (Claude, OpenAI, Gemini, Codex).
+**A position-driven adversarial arena for AI agents.** Host provides context and 2+ opposing positions; arena dispatches local CLI models (Claude, Codex, Gemini, OpenAI) to argue each position over multiple rounds and returns the transcript.
 
-## Features
+Available as an MCP server **and** a standalone CLI.
 
-### 🎭 arena_debate
-Multi-agent debates where AI agents argue different positions across multiple rounds.
-- Assign specific positions to each agent
-- Sequential or parallel execution modes
-- Full conversation history tracking
+## Mental model
 
-### 🔍 arena_review
-Parallel code reviews from multiple AI perspectives.
-- Focus areas: bugs, security, performance, or comprehensive review
-- Support for git refs, file lists, patches, and raw code
-- JSON or prose output formats
+- **Host doesn't fight.** The caller (Claude Code, Codex CLI, scripts) just supplies what should be argued and which positions to argue.
+- **Position is the unit, not the model.** Adversarial value comes from clashing stances, not from "which model wins". Same model with two different system prompts is a valid pair if no other CLI is available.
+- **Arena owns model dispatch.** It picks distinct models when multiple CLIs are healthy, falls back to reusing one when not.
 
-### ⚔️ arena_challenge
-Red-team style challenges where multiple agents attack an assertion.
-- Optional defender agent to protect the assertion
-- Multi-round adversarial testing
-- Find edge cases and counterexamples
+## Tools
 
-### ⚖️ arena_judge
-Impartial evaluation of completed arena sessions.
-- Score each agent's performance
-- Identify strengths, weaknesses, and consensus
-- Custom evaluation criteria
+| Tool | Purpose |
+|---|---|
+| `arena_challenge` | Core. Run N positions over R rounds against the supplied context. |
+| `arena_review` | Code-review preset over `arena_challenge`. Spawns attacker positions (default: bug-hunter + security-auditor) on the supplied code/diff. |
+| `arena_health` | List agent CLIs and their availability. |
 
-### 🏥 arena_health
-Health check for all registered AI agent CLIs.
+`arena_debate` and `arena_judge` were removed — debates collapsed into challenges (every debate is positions clashing), and the host LLM is the natural judge of returned transcripts.
 
-## Installation
-
-### Prerequisites
-
-Install the AI CLI tools you want to use:
+## Install
 
 ```bash
-# Claude CLI (required for claude agent)
-npm install -g @anthropic-ai/claude-cli
+# Required: at least one of these CLIs in $PATH
+npm install -g @anthropic-ai/claude-cli   # for "claude"
+npm install -g @codex-ai/cli              # for "codex" / "openai" / "gemini"
 
-# Codex CLI (required for codex agent)
-npm install -g @codex-ai/cli
-
-# Note: OpenAI and Gemini agents use codex CLI as adapter
-# No separate openai-cli or gemini-cli installation needed
+# Arena itself
+npm install -g arena-mcp     # or: npx arena-mcp
 ```
 
-### Install Arena MCP
-
-#### From npm (Recommended)
+## CLI usage
 
 ```bash
-# Run directly (no install needed)
-npx arena-mcp
+# Adversarial debate
+arena challenge \
+  --context "Should we use microservices or a monolith for a 10k-user product with 5 devs?" \
+  --position "微服务派：拆分有助于团队边界" \
+  --position "单体派：5 人小团队不该背运维债" \
+  --rounds 3
 
-# Or install globally
-npm install -g arena-mcp
+# Adversarial code review (positions auto-derived from --focus)
+arena review --git-ref feature/auth --focus bugs,security
+
+arena review --files src/login.ts,src/session.ts --focus security
+
+# Override which models to use (must already be healthy)
+arena challenge --context "..." --position a --position b --models claude,codex
+
+# Diagnostics
+arena health
+arena --version
+arena --help
+
+# Start MCP server (for use from MCP-capable hosts)
+arena            # default behavior
+arena mcp        # explicit
 ```
 
-#### From Source
+## MCP usage
 
-```bash
-git clone https://github.com/tim101010101/arena.git
-cd arena
-bun install
-bun run build
-bun install -g .
-```
-
-### Configure MCP Client
-
-Arena MCP works with any MCP-compatible client. Configuration examples:
-
-#### Claude Desktop
-
-Edit the configuration file:
-- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
-- **Linux**: `~/.config/Claude/claude_desktop_config.json`
-
-Or use: Settings > Developer > Edit Config
+Add to your MCP host configuration:
 
 ```json
 {
@@ -102,220 +82,86 @@ Or use: Settings > Developer > Edit Config
     "arena": {
       "command": "npx",
       "args": ["-y", "arena-mcp"],
-      "env": {
-        "ARENA_TIMEOUT_MS": "120000",
-        "ARENA_DEFAULT_ROUNDS": "3",
-        "ARENA_DEFAULT_MODE": "parallel"
-      }
+      "env": { "ARENA_TIMEOUT_MS": "120000", "ARENA_DEFAULT_ROUNDS": "3" }
     }
   }
 }
 ```
 
-#### Claude Code CLI
+Then call from the host:
 
-Use the CLI command to add the MCP server:
-
-```bash
-# If installed globally
-claude mcp add arena arena-mcp
-
-# Or use npx
-claude mcp add arena npx arena-mcp
-```
-
-To configure environment variables, edit your Claude Code config file manually:
-- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
-- **Linux**: `~/.config/Claude/claude_desktop_config.json`
-
-Configuration format is the same as Claude Desktop.
-
-#### Other MCP Clients
-
-For other MCP clients, refer to their documentation for MCP server configuration. The server command is `arena` and configuration is done via environment variables (see Configuration section below).
-
-Restart your MCP client to load the server.
-
-## Configuration
-
-All configuration is done through environment variables in the MCP client configuration. Available options:
-
-| Variable | Description | Default | Valid Range |
-|----------|-------------|---------|-------------|
-| `ARENA_TIMEOUT_MS` | Agent execution timeout (milliseconds) | `120000` | 1000-600000 |
-| `ARENA_DEFAULT_ROUNDS` | Default rounds for debates/challenges | `3` | 1-10 |
-| `ARENA_DEFAULT_MODE` | Execution mode | `parallel` | `sequential`, `parallel` |
-| `ARENA_MAX_CONTEXT_SIZE` | Maximum context size | `1000000` | 100000-10000000 |
-| `ARENA_CLAUDE_MODEL` | Claude model override | (CLI default) | See Claude CLI docs for current models |
-| `ARENA_CODEX_MODEL` | Codex model override | (CLI default) | See Codex CLI docs for current models |
-| `ARENA_GEMINI_MODEL` | Gemini model override | (CLI default) | See Gemini docs for current models |
-| `ARENA_OPENAI_MODEL` | OpenAI model override | (CLI default) | See OpenAI docs for current models |
-
-### Example Configuration
-
-```json
-{
-  "mcpServers": {
-    "arena": {
-      "command": "arena",
-      "env": {
-        "ARENA_TIMEOUT_MS": "180000",
-        "ARENA_DEFAULT_ROUNDS": "5",
-        "ARENA_DEFAULT_MODE": "sequential"
-      }
-    }
-  }
-}
-```
-
-### Troubleshooting
-
-- **Build fails**: Ensure `bun` is installed (`curl -fsSL https://bun.sh/install | bash`)
-- **Tools not appearing**: Restart your MCP client after config changes
-- **Agent CLI not found**: Install the required CLI tools (see Prerequisites)
-- **Invalid config**: Check the error message for validation details
-
-## Usage Examples
-
-### Debate: Architecture Decision
-
-```typescript
-// Ask multiple AI agents to debate a technical decision
-arena_debate({
-  topic: "Should we use microservices or monolith for our new project?",
-  agents: ["claude", "openai", "gemini"],
-  positions: {
-    "claude": "Advocate for microservices architecture",
-    "openai": "Advocate for monolithic architecture",
-    "gemini": "Neutral evaluator focusing on trade-offs"
-  },
-  rounds: 3,
-  context: "Team size: 5 developers, Expected scale: 10k users in year 1",
-  mode: "sequential"
-})
-```
-
-### Code Review: Multiple Perspectives
-
-```typescript
-// Get code reviews from multiple AI agents
-arena_review({
-  sources: [{
-    type: "git_ref",
-    ref: "feature/new-auth",
-    root: "/path/to/repo"
-  }],
-  agents: ["claude", "codex", "openai"],
-  focus: "security",
-  output_format: "json"
-})
-```
-
-### Challenge: Security Assertion
-
-```typescript
-// Red-team test a security claim
+```ts
 arena_challenge({
-  assertion: "Our authentication system is immune to timing attacks",
-  evidence: "We use constant-time comparison for all password checks",
-  challengers: ["claude", "codex"],
-  defender: "openai",
-  rounds: 2,
-  context: "Node.js backend with bcrypt password hashing"
+  context: "Plan: rewrite session middleware in Rust.",
+  positions: [
+    "Pragmatist: keep TypeScript, fix the GC pauses with pooling.",
+    "Rust advocate: rewrite for memory safety + zero-cost abstractions."
+  ],
+  rounds: 2
+})
+
+arena_review({
+  sources: [{ type: "git_ref", ref: "feature/new-auth" }],
+  focus: ["bugs", "security"]
 })
 ```
 
-### Judge: Evaluate Debate
+## Configuration (env vars)
 
-```typescript
-// Have a neutral agent evaluate the debate
-arena_judge({
-  session_id: "debate_abc123",
-  judge: "gemini",
-  criteria: ["evidence quality", "logical coherence", "practical feasibility"]
-})
+| Variable | Default | Notes |
+|---|---|---|
+| `ARENA_TIMEOUT_MS` | `120000` | Per-fighter execution timeout |
+| `ARENA_DEFAULT_ROUNDS` | `3` | Default rounds when not specified |
+| `ARENA_DEFAULT_MODE` | `parallel` | Reserved (challenge runs sequentially) |
+| `ARENA_MAX_CONTEXT_SIZE` | `1000000` | Max bytes from `sources` |
+| `ARENA_CLAUDE_MODEL` / `ARENA_CODEX_MODEL` / `ARENA_GEMINI_MODEL` / `ARENA_OPENAI_MODEL` | CLI default | Per-adapter model override |
+
+## Dispatch behavior
+
 ```
+positions = ["A", "B"]
+available = healthCheckAll().filter(ok)
+override  = caller-supplied --models / models[]
+
+pool = override ?? available
+fighter[i].model = pool[i % pool.length]
+```
+
+- Prefers distinct models when `len(positions) ≤ len(pool)`.
+- Cycles when positions outnumber the pool — same model, different prompts.
+- Each fighter gets a unique id (`<model>#<i>`) so transcripts stay disambiguated.
 
 ## Architecture
 
 ```
 src/
-├── index.ts           # MCP server entry point
-├── types.ts           # Zod schemas and TypeScript types
-├── orchestrator.ts    # Multi-agent execution orchestration
-├── session.ts         # Session management and history
-├── context.ts         # Code context acquisition (git, files)
-├── prompts.ts         # System and user prompts for each mode
-├── output.ts          # Response formatting
-├── utils.ts           # Utilities (timeout, env, binary checks)
-├── constants.ts       # Configuration constants
+├── index.ts            # entry: dispatches to MCP or CLI
+├── mcp.ts              # MCP server (stdio)
+├── cli-runner.ts       # CLI command runner
+├── orchestrator.ts     # slot-based round runner
+├── context.ts          # source acquisition (raw / git_ref / files / patch)
+├── types.ts            # zod schemas
+├── core/
+│   ├── cli.ts          # argv parser (pure)
+│   ├── dispatch.ts     # position→model assignment (pure)
+│   ├── challenge.ts    # challenge orchestration
+│   ├── review.ts       # focus→positions preset
+│   ├── prompts.ts      # system + round prompts
+│   ├── output.ts       # transcript formatter
+│   └── availability.ts # health → available models
 └── adapters/
-    ├── base.ts        # AgentAdapter interface
-    ├── registry.ts    # Adapter registry
-    ├── claude.ts      # Claude CLI adapter
-    ├── codex.ts       # Codex CLI adapter
-    ├── openai.ts      # OpenAI CLI adapter
-    └── gemini.ts      # Gemini CLI adapter
+    ├── base.ts registry.ts
+    └── claude.ts codex.ts gemini.ts openai.ts
 ```
 
 ## Development
 
 ```bash
-# Install dependencies
 bun install
-
-# Run tests
-bun test
-
-# Build
-bun run build
-
-# Start server (for testing)
-bun run start
+bun test          # full suite
+bun run build     # produces dist/index.js
 ```
-
-## Use Cases
-
-### 1. Code Review Enhancement
-Get multiple AI perspectives on code changes to catch more issues and improve code quality.
-
-### 2. Technical Decision Making
-Use structured debates to explore trade-offs and reach better architectural decisions.
-
-### 3. Security Testing
-Red-team your security assumptions with adversarial AI agents.
-
-### 4. AI Model Comparison
-Compare capabilities of different AI models on the same task.
-
-### 5. Collective Intelligence
-Leverage multiple AI agents to solve complex problems that benefit from diverse perspectives.
-
-## Limitations
-
-- Requires CLI tools for each AI provider
-- API costs scale with number of agents and rounds
-- Parallel mode can be expensive for large-scale usage
-- Response quality depends on underlying AI models
-
-## Contributing
-
-Contributions welcome! Please:
-1. Fork the repository
-2. Create a feature branch
-3. Add tests for new functionality
-4. Submit a pull request
 
 ## License
 
 MIT
-
-## Roadmap
-
-- [ ] Web UI for visualizing debates and reviews
-- [ ] Result persistence and analytics
-- [ ] Support for more AI providers
-- [ ] Streaming responses
-- [ ] Cost tracking and optimization
-- [ ] Custom agent personas and expertise areas

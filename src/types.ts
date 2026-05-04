@@ -18,41 +18,26 @@ const HistoryEntrySchema = z.object({
 
 export type HistoryEntry = z.infer<typeof HistoryEntrySchema>;
 
-export const DebateInputSchema = z.object({
-  topic: z.string(),
-  agents: z.array(z.string()).min(2),
-  positions: z.record(z.string()).optional(),
-  rounds: z.number().min(1).max(10).optional(),
-  context: z.string().optional(),
-  mode: z.enum(["sequential", "parallel"]).optional(),
-});
+export const ChallengeInputSchema = z
+  .object({
+    context: z.string().min(1),
+    positions: z.array(z.string().min(1)).min(2),
+    models: z.array(z.string().min(1)).optional(),
+    rounds: z.number().int().min(1).max(10).optional(),
+  })
+  .strict();
 
-export const ReviewInputSchema = z.object({
-  sources: z.array(ContextSourceSchema).optional(),
-  agents: z.array(z.string()).min(1),
-  focus: z.enum(["bugs", "security", "performance", "all"]).optional(),
-  context: z.string().optional(),
-  output_format: z.enum(["prose", "json"]).optional(),
-});
+export const ReviewInputSchema = z
+  .object({
+    sources: z.array(ContextSourceSchema).optional(),
+    context: z.string().optional(),
+    focus: z.array(z.enum(["bugs", "security", "performance", "readability"])).min(1).optional(),
+    models: z.array(z.string().min(1)).optional(),
+    rounds: z.number().int().min(1).max(10).optional(),
+  })
+  .strict();
 
-export const ChallengeInputSchema = z.object({
-  assertion: z.string(),
-  evidence: z.string().optional(),
-  challengers: z.array(z.string()).min(1),
-  defender: z.string().optional(),
-  rounds: z.number().min(1).max(10).optional(),
-  context: z.string().optional(),
-});
+export const HealthInputSchema = z.object({}).strict();
 
-export const JudgeInputSchema = z.object({
-  session_id: z.string(),
-  judge: z.string(),
-  criteria: z.array(z.string()).optional(),
-});
-
-export const HealthInputSchema = z.object({});
-
-export type DebateInput = z.infer<typeof DebateInputSchema>;
-export type ReviewInput = z.infer<typeof ReviewInputSchema>;
 export type ChallengeInput = z.infer<typeof ChallengeInputSchema>;
-export type JudgeInput = z.infer<typeof JudgeInputSchema>;
+export type ReviewInput = z.infer<typeof ReviewInputSchema>;

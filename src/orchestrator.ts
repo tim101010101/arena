@@ -1,12 +1,16 @@
 import type { AgentAdapter, AgentRequest, AgentResponse } from "./adapters/base";
 import { registry } from "./adapters/registry";
-import { ARENA_TIMEOUT_MS } from "./constants";
 
 export type ExecutionMode = "sequential" | "parallel";
 
+export interface AgentSlot {
+  id: string;
+  model: string;
+}
+
 export interface OrchestratorRequest {
-  agents: string[];
-  buildRequest: (agentId: string) => AgentRequest;
+  slots: AgentSlot[];
+  buildRequest: (slot: AgentSlot) => AgentRequest;
   mode: ExecutionMode;
 }
 
@@ -15,17 +19,18 @@ export interface OrchestratorResult {
   failed: string[];
 }
 
-function getAdapter(id: string): AgentAdapter {
-  return registry.get(id);
-}
-
-async function executeOne(adapter: AgentAdapter, req: AgentRequest): Promise<AgentResponse> {
+async function executeSlot(
+  slot: AgentSlot,
+  adapter: AgentAdapter,
+  req: AgentRequest,
+): Promise<AgentResponse> {
   try {
-    return await adapter.execute(req);
+    const resp = await adapter.execute(req);
+    return { ...resp, agent: slot.id };
   } catch (err) {
     return {
       content: "",
-      agent: adapter.id,
+      agent: slot.id,
       latency_ms: 0,
       error: err instanceof Error ? err.message : String(err),
     };
@@ -33,18 +38,17 @@ async function executeOne(adapter: AgentAdapter, req: AgentRequest): Promise<Age
 }
 
 export async function orchestrate(request: OrchestratorRequest): Promise<OrchestratorResult> {
-  const adapters = request.agents.map((id) => getAdapter(id));
+  const pairs = request.slots.map((slot) => ({ slot, adapter: registry.get(slot.model) }));
   let responses: AgentResponse[];
 
   if (request.mode === "parallel") {
     responses = await Promise.all(
-      adapters.map((a) => executeOne(a, request.buildRequest(a.id))),
+      pairs.map(({ slot, adapter }) => executeSlot(slot, adapter, request.buildRequest(slot))),
     );
   } else {
     responses = [];
-    for (const adapter of adapters) {
-      const resp = await executeOne(adapter, request.buildRequest(adapter.id));
-      responses.push(resp);
+    for (const { slot, adapter } of pairs) {
+      responses.push(await executeSlot(slot, adapter, request.buildRequest(slot)));
     }
   }
 
@@ -53,10 +57,10 @@ export async function orchestrate(request: OrchestratorRequest): Promise<Orchest
 }
 
 export async function orchestrateRounds(
-  agents: string[],
+  slots: AgentSlot[],
   rounds: number,
   mode: ExecutionMode,
-  buildRequest: (agentId: string, round: number, history: AgentResponse[]) => AgentRequest,
+  buildRequest: (slot: AgentSlot, round: number, history: AgentResponse[]) => AgentRequest,
   onRound?: (round: number, responses: AgentResponse[]) => void,
 ): Promise<AgentResponse[][]> {
   const allRounds: AgentResponse[][] = [];
@@ -64,9 +68,9 @@ export async function orchestrateRounds(
 
   for (let round = 1; round <= rounds; round++) {
     const result = await orchestrate({
-      agents,
+      slots,
       mode,
-      buildRequest: (agentId) => buildRequest(agentId, round, history),
+      buildRequest: (slot) => buildRequest(slot, round, history),
     });
     allRounds.push(result.responses);
     history.push(...result.responses);

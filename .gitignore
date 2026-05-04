@@ -33,3 +33,7 @@ coverage/
 # Temporary
 tmp/
 temp/
+
+# Eval reports — ephemeral, never commit transcripts or summaries
+evals/reports/*
+!evals/reports/.gitkeep
