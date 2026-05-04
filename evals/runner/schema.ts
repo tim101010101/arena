@@ -25,6 +25,7 @@ const BaseCase = z.object({
   expectations: z.array(ExpectationSchema).min(1),
   rubric: z.array(RubricDimSchema).min(1),
   budget: BudgetSchema.optional(),
+  timeout_ms: z.number().int().min(1000).max(600_000).optional(),
   tags: z.array(z.string()).default([]),
   models: z.array(z.string().min(1)).optional(),
 });

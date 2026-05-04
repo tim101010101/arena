@@ -18,18 +18,25 @@ export function spawnProcess(
     env?: Record<string, string>;
     stdout?: "pipe" | "ignore";
     stderr?: "pipe" | "ignore";
+    signal?: AbortSignal;
   },
 ): SpawnedProcess {
   const [cmd, ...rest] = args;
   const proc = nodeSpawn(cmd, rest, {
     cwd: options.cwd,
     env: options.env,
+    signal: options.signal,
+    killSignal: "SIGKILL",
     stdio: [
       "ignore",
       options.stdout === "ignore" ? "ignore" : "pipe",
       options.stderr === "ignore" ? "ignore" : "pipe",
     ],
   });
+
+  // Swallow the AbortError node emits when `signal` aborts; callers learn the
+  // outcome via `exited` + `exitCode` instead.
+  proc.on("error", () => {});
 
   let exitCode: number | null = null;
   const exited = new Promise<void>((resolve) => {
@@ -49,11 +56,18 @@ export function spawnProcess(
 }
 
 function collectStream(stream: NodeJS.ReadableStream): Promise<string> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const chunks: Buffer[] = [];
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      resolve(Buffer.concat(chunks).toString("utf8"));
+    };
     stream.on("data", (chunk: Buffer) => chunks.push(chunk));
-    stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
-    stream.on("error", reject);
+    stream.on("end", finish);
+    stream.on("close", finish);
+    stream.on("error", finish);
   });
 }
 
@@ -110,4 +124,42 @@ export async function whichBinary(name: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+export async function probeBinary(
+  name: string,
+  args: string[],
+  timeoutMs: number,
+): Promise<{ ok: boolean; error?: string; latency_ms: number }> {
+  const t0 = Date.now();
+  const found = await whichBinary(name);
+  if (!found) {
+    return { ok: false, error: `"${name}" not found in PATH`, latency_ms: Date.now() - t0 };
+  }
+
+  const controller = new AbortController();
+  const proc = spawnProcess([name, ...args], {
+    stdout: "ignore",
+    stderr: "pipe",
+    signal: controller.signal,
+  });
+  const stderrPromise = readStderr(proc);
+
+  try {
+    await withTimeout(proc.exited, timeoutMs, `${name} probe`);
+  } catch (err) {
+    controller.abort();
+    await proc.exited;
+    return { ok: false, error: String(err), latency_ms: Date.now() - t0 };
+  }
+
+  if (proc.exitCode !== 0) {
+    const stderr = await stderrPromise;
+    return {
+      ok: false,
+      error: `${name} probe exited ${proc.exitCode}: ${stderr.slice(0, 200)}`,
+      latency_ms: Date.now() - t0,
+    };
+  }
+  return { ok: true, latency_ms: Date.now() - t0 };
 }

@@ -33,7 +33,7 @@ export async function runChallenge(input: ChallengeInput): Promise<ChallengeResu
   const transcript = await orchestrateRounds(
     slots,
     rounds,
-    "sequential",
+    "parallel",
     (slot, round, history) => ({
       system: challengeSystemPrompt(positionById.get(slot.id) ?? ""),
       prompt: challengeRoundPrompt(

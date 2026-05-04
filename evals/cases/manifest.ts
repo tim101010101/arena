@@ -3,7 +3,7 @@ import type { Manifest } from "../runner/schema";
 const manifest: Manifest = {
   run_defaults: {
     repeats: 1,
-    shard_size: 3,
+    shard_size: 1,
     max_parallel_subagents: 4,
   },
   cases: [

@@ -68,6 +68,7 @@ export async function executeCase(opts: ExecuteOptions): Promise<RawOutput> {
     availableModels: available,
     models: opts.case.models,
     rounds: opts.case.rounds,
+    timeout_ms: opts.case.timeout_ms,
   });
 
   const positionById = new Map(result.fighters.map((f) => [f.id, f.position]));

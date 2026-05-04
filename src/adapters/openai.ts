@@ -1,20 +1,13 @@
 import type { AgentAdapter, AgentRequest, AgentResponse, HealthResult } from "./base";
-import { agentEnv, withTimeout, makeTempFile, cleanupTempFile, readStderr, readFileText, whichBinary, spawnProcess } from "../utils";
-import { ARENA_TIMEOUT_MS, AGENT_MODELS } from "../constants";
+import { agentEnv, withTimeout, makeTempFile, cleanupTempFile, readStderr, readFileText, probeBinary, spawnProcess } from "../utils";
+import { ARENA_TIMEOUT_MS, AGENT_MODELS, HEALTH_CHECK_TIMEOUT_MS } from "../constants";
 
 export class OpenAIAdapter implements AgentAdapter {
   readonly id = "openai";
   readonly name = "OpenAI (via codex exec)";
 
   async healthCheck(): Promise<HealthResult> {
-    const t0 = Date.now();
-    try {
-      const found = await whichBinary("codex");
-      if (!found) return { ok: false, error: '"codex" not found in PATH (required for OpenAI adapter)', latency_ms: Date.now() - t0 };
-      return { ok: true, latency_ms: Date.now() - t0 };
-    } catch (err) {
-      return { ok: false, error: String(err), latency_ms: Date.now() - t0 };
-    }
+    return probeBinary("codex", ["--version"], HEALTH_CHECK_TIMEOUT_MS);
   }
 
   buildArgs(model: string, outputFile: string, prompt: string): string[] {
@@ -46,11 +39,13 @@ export class OpenAIAdapter implements AgentAdapter {
 
     const args = this.buildArgs(model, tmpFile, prompt);
 
+    const controller = new AbortController();
     const proc = spawnProcess(args, {
       cwd: req.cwd || process.cwd(),
       stdout: "ignore",
       stderr: "pipe",
       env: agentEnv(),
+      signal: controller.signal,
     });
 
     const stderrPromise = readStderr(proc);
@@ -58,7 +53,8 @@ export class OpenAIAdapter implements AgentAdapter {
     try {
       await withTimeout(proc.exited, timeout, "openai");
     } catch (err) {
-      proc.kill(9);
+      controller.abort();
+      await proc.exited;
       await cleanupTempFile(tmpFile);
       return { content: "", agent: this.id, latency_ms: Date.now() - t0, error: String(err) };
     }

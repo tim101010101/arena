@@ -1,20 +1,13 @@
 import type { AgentAdapter, AgentRequest, AgentResponse, HealthResult } from "./base";
-import { agentEnv, withTimeout, readStdout, readStderr, whichBinary, spawnProcess } from "../utils";
-import { ARENA_TIMEOUT_MS, AGENT_MODELS } from "../constants";
+import { agentEnv, withTimeout, readStdout, readStderr, probeBinary, spawnProcess } from "../utils";
+import { ARENA_TIMEOUT_MS, AGENT_MODELS, HEALTH_CHECK_TIMEOUT_MS } from "../constants";
 
 export class ClaudeAdapter implements AgentAdapter {
   readonly id = "claude";
   readonly name = "Claude (claude -p)";
 
   async healthCheck(): Promise<HealthResult> {
-    const t0 = Date.now();
-    try {
-      const found = await whichBinary("claude");
-      if (!found) return { ok: false, error: '"claude" not found in PATH', latency_ms: Date.now() - t0 };
-      return { ok: true, latency_ms: Date.now() - t0 };
-    } catch (err) {
-      return { ok: false, error: String(err), latency_ms: Date.now() - t0 };
-    }
+    return probeBinary("claude", ["--version"], HEALTH_CHECK_TIMEOUT_MS);
   }
 
   buildArgs(req: AgentRequest): string[] {
@@ -39,11 +32,13 @@ export class ClaudeAdapter implements AgentAdapter {
     const timeout = req.timeout_ms || ARENA_TIMEOUT_MS;
     const args = this.buildArgs(req);
 
+    const controller = new AbortController();
     const proc = spawnProcess(args, {
       cwd: req.cwd || process.cwd(),
       stdout: "pipe",
       stderr: "pipe",
       env: agentEnv(),
+      signal: controller.signal,
     });
 
     const stdoutPromise = readStdout(proc);
@@ -52,7 +47,8 @@ export class ClaudeAdapter implements AgentAdapter {
     try {
       await withTimeout(proc.exited, timeout, "claude");
     } catch (err) {
-      proc.kill(9);
+      controller.abort();
+      await proc.exited;
       return { content: "", agent: this.id, latency_ms: Date.now() - t0, error: String(err) };
     }
 

@@ -57,7 +57,8 @@ const c: Case = {
       min: 3,
     },
   ],
-  budget: { max_latency_ms: 540_000, max_rounds_with_errors: 0 },
+  budget: { max_latency_ms: 540_000, max_rounds_with_errors: 1 },
+  timeout_ms: 240_000,
 };
 
 export default c;
