@@ -11,6 +11,7 @@ const ConfigSchema = z.object({
     codex: z.string().min(1).optional(),
     gemini: z.string().min(1).optional(),
     openai: z.string().min(1).optional(),
+    kimi: z.string().min(1).optional(),
   }),
 });
 
@@ -28,6 +29,7 @@ function parseEnv(): Config {
       codex: process.env.ARENA_CODEX_MODEL !== undefined ? (process.env.ARENA_CODEX_MODEL === "" ? "" : process.env.ARENA_CODEX_MODEL) : undefined,
       gemini: process.env.ARENA_GEMINI_MODEL !== undefined ? (process.env.ARENA_GEMINI_MODEL === "" ? "" : process.env.ARENA_GEMINI_MODEL) : undefined,
       openai: process.env.ARENA_OPENAI_MODEL !== undefined ? (process.env.ARENA_OPENAI_MODEL === "" ? "" : process.env.ARENA_OPENAI_MODEL) : undefined,
+      kimi: process.env.ARENA_KIMI_MODEL !== undefined ? (process.env.ARENA_KIMI_MODEL === "" ? "" : process.env.ARENA_KIMI_MODEL) : undefined,
     },
   };
 

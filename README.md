@@ -39,6 +39,7 @@ Available as an MCP server **and** a standalone CLI.
 # Required: at least one of these CLIs in $PATH
 npm install -g @anthropic-ai/claude-cli   # for "claude"
 npm install -g @codex-ai/cli              # for "codex" / "openai" / "gemini"
+uv tool install kimi-cli                  # for "kimi" (or: pipx install kimi-cli)
 
 # Arena itself
 npm install -g arena-mcp     # or: npx arena-mcp
@@ -151,7 +152,7 @@ src/
 │   └── availability.ts # health → available models
 └── adapters/
     ├── base.ts registry.ts
-    └── claude.ts codex.ts gemini.ts openai.ts
+    └── claude.ts codex.ts gemini.ts openai.ts kimi.ts
 ```
 
 ## Development

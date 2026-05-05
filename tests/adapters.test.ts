@@ -3,6 +3,7 @@ import { CodexAdapter } from "../src/adapters/codex";
 import { ClaudeAdapter } from "../src/adapters/claude";
 import { OpenAIAdapter } from "../src/adapters/openai";
 import { GeminiAdapter } from "../src/adapters/gemini";
+import { KimiAdapter } from "../src/adapters/kimi";
 
 describe("CodexAdapter", () => {
   const adapter = new CodexAdapter();
@@ -151,6 +152,43 @@ describe("GeminiAdapter", () => {
       expect(finalPrompt).toContain("context info");
       expect(finalPrompt).toContain("Previous discussion:");
       expect(finalPrompt).toContain("[gemini]: prev");
+      expect(finalPrompt).toContain("question");
+    });
+  });
+});
+
+describe("KimiAdapter", () => {
+  const adapter = new KimiAdapter();
+
+  test("should have correct id and name", () => {
+    expect(adapter.id).toBe("kimi");
+    expect(adapter.name).toBe("Kimi (kimi CLI)");
+  });
+
+  describe("buildArgs", () => {
+    test("should include quiet and yolo flags and pass prompt via -p", () => {
+      const args = adapter.buildArgs({ prompt: "test", timeout_ms: 5000 });
+      expect(args[0]).toBe("kimi");
+      expect(args).toContain("--quiet");
+      expect(args).toContain("--yolo");
+      expect(args).toContain("-p");
+      expect(args[args.length - 1]).toBe("test");
+    });
+
+    test("should combine system, context, and history into prompt", () => {
+      const args = adapter.buildArgs({
+        prompt: "question",
+        system: "system prompt",
+        context: "context info",
+        history: [{ role: "agent" as const, agent: "kimi", content: "prev" }],
+        timeout_ms: 5000,
+      });
+      const finalPrompt = args[args.length - 1];
+      expect(finalPrompt).toContain("system prompt");
+      expect(finalPrompt).toContain("Context:");
+      expect(finalPrompt).toContain("context info");
+      expect(finalPrompt).toContain("Previous discussion:");
+      expect(finalPrompt).toContain("[kimi]: prev");
       expect(finalPrompt).toContain("question");
     });
   });
