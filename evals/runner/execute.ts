@@ -1,10 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { registry } from "../../src/adapters/registry";
-import { ClaudeAdapter } from "../../src/adapters/claude";
-import { CodexAdapter } from "../../src/adapters/codex";
-import { GeminiAdapter } from "../../src/adapters/gemini";
-import { OpenAIAdapter } from "../../src/adapters/openai";
+import { registerAllAdapters } from "../../src/adapters/register-all";
 import { runChallenge } from "../../src/core/challenge";
 import { reviewPositions } from "../../src/core/review";
 import { availableModels } from "../../src/core/availability";
@@ -12,16 +9,6 @@ import { acquireContext } from "../../src/context";
 import { formatChallengeTranscript } from "../../src/core/output";
 import type { Case } from "./schema";
 import type { RawOutput } from "./schema";
-
-let registered = false;
-function ensureAdapters(): void {
-  if (registered) return;
-  registry.register(new ClaudeAdapter());
-  registry.register(new CodexAdapter());
-  registry.register(new GeminiAdapter());
-  registry.register(new OpenAIAdapter());
-  registered = true;
-}
 
 export interface ExecuteOptions {
   case: Case;
@@ -32,7 +19,7 @@ export interface ExecuteOptions {
 }
 
 export async function executeCase(opts: ExecuteOptions): Promise<RawOutput> {
-  ensureAdapters();
+  registerAllAdapters();
   const startedAt = new Date().toISOString();
   const checks = await registry.healthCheckAll();
   let available = availableModels(checks);

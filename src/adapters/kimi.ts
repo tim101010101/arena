@@ -12,7 +12,7 @@ export class KimiAdapter implements AgentAdapter {
 
   buildArgs(req: AgentRequest): string[] {
     const model = AGENT_MODELS.kimi;
-    const args = ["kimi", "--quiet", "--yolo"];
+    const args = ["kimi", "--quiet", "--yolo", "--no-thinking"];
     if (model) args.push("-m", model);
 
     let prompt = req.prompt;
