@@ -6,7 +6,42 @@ on:
       - 'v*'
 
 jobs:
+  build-native:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: bun-linux-x64
+            binary: arena-linux-x64
+          - os: ubuntu-latest
+            target: bun-linux-arm64
+            binary: arena-linux-arm64
+          - os: macos-latest
+            target: bun-darwin-x64
+            binary: arena-darwin-x64
+          - os: macos-latest
+            target: bun-darwin-arm64
+            binary: arena-darwin-arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install
+
+      - name: Compile native binary
+        run: bun build src/index.ts --compile --target=${{ matrix.target }} --outfile=dist/${{ matrix.binary }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.binary }}
+          path: dist/${{ matrix.binary }}
+
   release:
+    needs: build-native
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -29,6 +64,12 @@ jobs:
       - run: bun test
       - run: bun run build
 
+      - name: Download native binaries
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/native
+          merge-multiple: true
+
       - name: Pack tarball
         run: npm pack
 
@@ -41,33 +82,22 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            arena-mcp-*.tgz
-            dist/index.js
+            arena-debate-*.tgz
+            dist/native/arena-*
           generate_release_notes: true
           body: |
-            ## Installation
+            ## Install
+
+            ### Shell (no npm/node required)
 
             ```bash
-            # Run directly (no install needed)
-            npx arena-mcp
-
-            # Or install globally
-            npm install -g arena-mcp
+            curl -fsSL https://raw.githubusercontent.com/tim101010101/arena/main/install.sh | bash
             ```
 
-            ### Claude Desktop / Kiro Configuration
-            ```json
-            {
-              "mcpServers": {
-                "arena": {
-                  "command": "npx",
-                  "args": ["-y", "arena-mcp"],
-                  "env": {
-                    "ANTHROPIC_API_KEY": "your-key",
-                    "OPENAI_API_KEY": "your-key",
-                    "GEMINI_API_KEY": "your-key"
-                  }
-                }
-              }
-            }
+            Installs the native binary to `~/.local/bin/arena`. Supports macOS (arm64/x64) and Linux (arm64/x64).
+
+            ### npm
+
+            ```bash
+            npm install -g arena-debate   # or: npx arena-debate
             ```

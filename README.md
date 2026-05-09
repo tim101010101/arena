@@ -38,19 +38,37 @@ A standalone CLI — invoke it from your shell, scripts, or any agent that can r
 npm install -g @anthropic-ai/claude-cli   # for "claude"
 npm install -g @codex-ai/cli              # for "codex" / "openai" / "gemini"
 uv tool install kimi-cli                  # for "kimi" (or: pipx install kimi-cli)
+```
 
-# Arena itself
+### Shell (no npm/node required)
+
+Downloads a self-contained native binary from the latest GitHub release. Supports macOS (arm64/x64) and Linux (arm64/x64).
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/tim101010101/arena/main/install.sh | bash
+```
+
+Installs to `~/.local/bin/arena`. Override the directory with `ARENA_INSTALL_DIR`, or pin a version with `ARENA_VERSION`:
+
+```bash
+ARENA_INSTALL_DIR=/usr/local/bin ARENA_VERSION=v0.1.3 \
+  curl -fsSL https://raw.githubusercontent.com/tim101010101/arena/main/install.sh | bash
+```
+
+### npm
+
+```bash
 npm install -g arena-debate     # or: npx arena-debate
 ```
 
 ## CLI usage
 
 ```bash
-# Adversarial debate
+# Adversarial debate — supply your own positions
 arena challenge \
   --context "Should we use microservices or a monolith for a 10k-user product with 5 devs?" \
-  --position "微服务派：拆分有助于团队边界" \
-  --position "单体派：5 人小团队不该背运维债" \
+  --position "Pro-microservices: team boundaries justify the split" \
+  --position "Pro-monolith: a 5-person team should not carry the ops burden" \
   --rounds 3
 
 # Adversarial code review (positions auto-derived from --focus)
@@ -91,28 +109,6 @@ fighter[i].model = pool[i % pool.length]
 - Prefers distinct models when `len(positions) ≤ len(pool)`.
 - Cycles when positions outnumber the pool — same model, different prompts.
 - Each fighter gets a unique id (`<model>#<i>`) so transcripts stay disambiguated.
-
-## Architecture
-
-```
-src/
-├── index.ts            # entry: parses argv and runs the CLI
-├── cli-runner.ts       # CLI command runner
-├── orchestrator.ts     # slot-based round runner
-├── context.ts          # source acquisition (raw / git_ref / files / patch)
-├── types.ts            # zod schemas
-├── core/
-│   ├── cli.ts          # argv parser (pure)
-│   ├── dispatch.ts     # position→model assignment (pure)
-│   ├── challenge.ts    # challenge orchestration
-│   ├── review.ts       # focus→positions preset
-│   ├── prompts.ts      # system + round prompts
-│   ├── output.ts       # transcript formatter
-│   └── availability.ts # health → available models
-└── adapters/
-    ├── base.ts registry.ts
-    └── claude.ts codex.ts gemini.ts openai.ts kimi.ts
-```
 
 ## Development
 
