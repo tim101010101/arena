@@ -2,6 +2,7 @@ import type { CliCommand, ScenarioInput } from "./core/cli";
 import type { ContextSource } from "./types";
 import type { ScenarioConfig } from "./config/scenarios";
 import { BUILTIN_SCENARIOS } from "./config/scenarios";
+import { runMcpServer } from "./core/mcp";
 import { registry } from "./adapters/registry";
 import { runScenario } from "./core/scenario";
 import { reviewPositions } from "./core/review";
@@ -105,6 +106,9 @@ export async function runCli(
       return 0;
     case "health":
       await runHealth();
+      return 0;
+    case "mcp":
+      await runMcpServer(scenarios, version);
       return 0;
     case "scenario": {
       const scenario = scenarios[cmd.input.scenario];

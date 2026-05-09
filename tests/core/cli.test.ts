@@ -10,6 +10,10 @@ describe("parseArgs", () => {
     expect(parseArgs(["health"])).toEqual({ kind: "health" });
   });
 
+  test("should parse 'mcp' subcommand", () => {
+    expect(parseArgs(["mcp"])).toEqual({ kind: "mcp" });
+  });
+
   test("should parse '--help' flag", () => {
     expect(parseArgs(["--help"]).kind).toBe("help");
     expect(parseArgs(["-h"]).kind).toBe("help");

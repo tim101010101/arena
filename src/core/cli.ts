@@ -20,10 +20,11 @@ export type CliCommand =
   | { kind: "health" }
   | { kind: "help" }
   | { kind: "version" }
+  | { kind: "mcp" }
   | { kind: "error"; message: string }
   | { kind: "scenario"; input: ScenarioInput };
 
-const RESERVED = new Set(["health", "help", "--help", "-h", "--version", "-v"]);
+const RESERVED = new Set(["health", "help", "--help", "-h", "--version", "-v", "mcp"]);
 
 function takeValue(args: string[], i: number, flag: string): { value: string; next: number } {
   const value = args[i + 1];
@@ -102,6 +103,7 @@ export function parseArgs(
   if (head === "--help" || head === "-h" || head === "help") return { kind: "help" };
   if (head === "--version" || head === "-v") return { kind: "version" };
   if (head === "health") return { kind: "health" };
+  if (head === "mcp") return { kind: "mcp" };
 
   if (RESERVED.has(head)) return { kind: "error", message: `unknown subcommand: ${head}` };
 

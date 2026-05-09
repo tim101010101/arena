@@ -1,6 +1,6 @@
 {
   "name": "arena-debate",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Position-driven adversarial debate CLI — host supplies opposing stances, arena runs the debate across local model CLIs (Claude, Codex, Gemini, OpenAI, Kimi).",
   "type": "module",
   "main": "dist/index.js",
@@ -45,6 +45,7 @@
     "build:native": "bun build src/index.ts --compile --target=bun-linux-x64 --outfile=dist/arena-linux-x64 && bun build src/index.ts --compile --target=bun-linux-arm64 --outfile=dist/arena-linux-arm64 && bun build src/index.ts --compile --target=bun-darwin-x64 --outfile=dist/arena-darwin-x64 && bun build src/index.ts --compile --target=bun-darwin-arm64 --outfile=dist/arena-darwin-arm64"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "zod": "^3.24.0"
   },
   "devDependencies": {

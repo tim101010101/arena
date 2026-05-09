@@ -30,6 +30,7 @@ A standalone CLI — invoke it from your shell, scripts, or any agent that can r
 | `arena challenge` | Core. Run N positions over R rounds against the supplied context. |
 | `arena review` | Code-review preset over `arena challenge`. Spawns attacker positions (default: bug-hunter + security-auditor) on the supplied code/diff. |
 | `arena health` | List agent CLIs and their availability. |
+| `arena mcp` | Start arena as a stdio MCP server — exposes each scenario as a tool callable from any MCP client. |
 
 ## Install
 
@@ -84,6 +85,29 @@ arena health
 arena --version
 arena --help
 ```
+
+## MCP server
+
+`arena mcp` starts a stdio MCP server. Each loaded scenario (`challenge`, `review`, and any user-defined ones) is exposed as an MCP tool; a `health` tool is also included.
+
+Add it to your MCP client config (e.g. Claude Desktop or Claude Code `.mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "arena": {
+      "command": "arena",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+Once connected, your AI client can call:
+
+- **`challenge`** — supply `context` (string) and `positions` (array of ≥2 strings); optional `rounds` and `models`.
+- **`review`** — supply `sources` (array of source objects: `raw`, `git_ref`, `git_range`, `file_list`, or `patch_file`); optional `focus`, `rounds`, and `models`.
+- **`health`** — returns availability of all local agent CLIs.
 
 ## Configuration (env vars)
 
