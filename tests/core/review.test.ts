@@ -17,13 +17,16 @@ describe("reviewPositions", () => {
     expect(positions[1].toLowerCase()).toContain("performance");
   });
 
-  test("should ensure at least 2 positions even when only one focus given", () => {
-    const positions = reviewPositions(["bugs"]);
-    expect(positions.length).toBeGreaterThanOrEqual(2);
+  test("should throw when fewer than 2 focus values are given", () => {
+    expect(() => reviewPositions(["bugs"])).toThrow(/at least 2/i);
+  });
+
+  test("should throw on unknown focus key", () => {
+    expect(() => reviewPositions(["nonsense"])).toThrow(/unknown focus/i);
   });
 
   test("each position should describe an attacker stance, not a generic reviewer", () => {
-    const positions = reviewPositions(["bugs"]);
+    const positions = reviewPositions(["bugs", "security"]);
     const joined = positions.join("\n").toLowerCase();
     expect(joined).toMatch(/find|attack|hostile|adversarial|exploit|break/);
   });

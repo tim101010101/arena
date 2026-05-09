@@ -1,21 +1,29 @@
+import type { ScenarioConfig } from "../config/scenarios";
+import { BUILTIN_SCENARIOS } from "../config/scenarios";
+
 export type ReviewFocus = "bugs" | "security" | "performance" | "readability";
 
-const POSITION_BY_FOCUS: Record<ReviewFocus, string> = {
-  bugs: "Hostile reviewer hunting for bugs and logic errors. Find concrete failure cases the author missed.",
-  security: "Adversarial security auditor. Attack the code from a threat model: injection, auth bypass, data leaks, supply chain.",
-  performance: "Performance critic. Find hot paths, allocations, blocking calls, and complexity surprises that will hurt at scale.",
-  readability: "Maintainer two years from now. Find naming, structure, and coupling that will break the next reader.",
-};
+export function reviewPositions(
+  focus?: string[],
+  scenario: ScenarioConfig = BUILTIN_SCENARIOS.review,
+): string[] {
+  if (!scenario.focus_positions) {
+    throw new Error("review scenario requires focus_positions");
+  }
+  const requested = focus?.length ? focus : (scenario.default_focus ?? []);
+  if (requested.length === 0) {
+    throw new Error("review requires at least one focus");
+  }
 
-const DEFAULT_FOCUS: ReviewFocus[] = ["bugs", "security"];
-
-export function reviewPositions(focus?: ReviewFocus[]): string[] {
-  const requested = focus?.length ? focus : DEFAULT_FOCUS;
-  const positions = requested.map((f) => POSITION_BY_FOCUS[f]);
+  const positions: string[] = [];
+  for (const f of requested) {
+    const p = scenario.focus_positions[f];
+    if (!p) throw new Error(`unknown focus: ${f}`);
+    positions.push(p);
+  }
 
   if (positions.length < 2) {
-    const fallback: ReviewFocus = requested[0] === "bugs" ? "security" : "bugs";
-    positions.push(POSITION_BY_FOCUS[fallback]);
+    throw new Error("review requires at least 2 focus values for an adversarial pair");
   }
   return positions;
 }

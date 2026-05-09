@@ -1,30 +1,36 @@
 import type { HistoryEntry } from "../types";
+import type { ScenarioPrompts } from "../config/scenarios";
+import { BUILTIN_SCENARIOS } from "../config/scenarios";
+import { renderString } from "../config/template";
 
-export function challengeSystemPrompt(position: string): string {
-  return [
-    `You are an agent in a position-driven adversarial arena.`,
-    `Your assigned position: ${position}`,
-    `Argue for your position rigorously. Cite concrete evidence and edge cases.`,
-    `Engage directly with opposing positions — find weaknesses, propose counterexamples.`,
-    `Be specific. Avoid generalities.`,
-  ].join("\n");
+export function challengeSystemPrompt(
+  position: string,
+  prompts: ScenarioPrompts = BUILTIN_SCENARIOS.challenge.prompts,
+): string {
+  return renderString(prompts.system, { prompt: "", position });
 }
 
 export function challengeRoundPrompt(
   context: string,
   round: number,
   history: HistoryEntry[],
+  prompts: ScenarioPrompts = BUILTIN_SCENARIOS.challenge.prompts,
 ): string {
-  const parts = [
-    `Subject under review:`,
+  const historyStr = history.length
+    ? history
+        .map((h) =>
+          renderString(prompts.history_entry, {
+            prompt: "",
+            agent: h.agent ?? h.role,
+            content: h.content,
+          }),
+        )
+        .join("\n")
+    : "";
+  return renderString(prompts.round, {
+    prompt: "",
     context,
-    ``,
-    `Round: ${round}`,
-  ];
-  if (history.length) {
-    parts.push(``, `Previous responses:`);
-    for (const h of history) parts.push(`[${h.agent ?? h.role}]: ${h.content}`);
-    parts.push(``, `Respond from your assigned position. Address the latest opposing arguments directly.`);
-  }
-  return parts.join("\n");
+    round: String(round),
+    history: historyStr,
+  });
 }

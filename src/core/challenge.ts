@@ -3,6 +3,8 @@ import { challengeSystemPrompt, challengeRoundPrompt } from "./prompts";
 import { orchestrateRounds, type AgentSlot } from "../orchestrator";
 import type { AgentResponse } from "../adapters/base";
 import type { HistoryEntry } from "../types";
+import type { ScenarioConfig } from "../config/scenarios";
+import { BUILTIN_SCENARIOS } from "../config/scenarios";
 import { ARENA_TIMEOUT_MS, DEFAULT_ROUNDS } from "../constants";
 
 export interface ChallengeInput {
@@ -12,6 +14,7 @@ export interface ChallengeInput {
   models?: string[];
   rounds?: number;
   timeout_ms?: number;
+  scenario?: ScenarioConfig;
 }
 
 export interface ChallengeResult {
@@ -24,8 +27,10 @@ export async function runChallenge(input: ChallengeInput): Promise<ChallengeResu
     throw new Error("challenge requires at least 2 positions");
   }
 
+  const scenario = input.scenario ?? BUILTIN_SCENARIOS.challenge;
   const fighters = dispatch(input.positions, input.availableModels, input.models);
-  const rounds = input.rounds ?? DEFAULT_ROUNDS;
+  const rounds = input.rounds ?? scenario.default_rounds ?? DEFAULT_ROUNDS;
+  const mode = scenario.default_mode ?? "parallel";
   const timeout = input.timeout_ms ?? ARENA_TIMEOUT_MS;
   const positionById = new Map(fighters.map((f) => [f.id, f.position]));
   const slots: AgentSlot[] = fighters.map(({ id, model }) => ({ id, model }));
@@ -33,13 +38,14 @@ export async function runChallenge(input: ChallengeInput): Promise<ChallengeResu
   const transcript = await orchestrateRounds(
     slots,
     rounds,
-    "parallel",
+    mode,
     (slot, round, history) => ({
-      system: challengeSystemPrompt(positionById.get(slot.id) ?? ""),
+      system: challengeSystemPrompt(positionById.get(slot.id) ?? "", scenario.prompts),
       prompt: challengeRoundPrompt(
         input.context,
         round,
         history.map((r): HistoryEntry => ({ role: "agent", agent: r.agent, content: r.content })),
+        scenario.prompts,
       ),
       timeout_ms: timeout,
     }),

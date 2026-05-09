@@ -26,8 +26,9 @@ describe("parseArgs", () => {
       "--position", "pro",
       "--position", "con",
     ]);
-    expect(cmd.kind).toBe("challenge");
-    if (cmd.kind === "challenge") {
+    expect(cmd.kind).toBe("scenario");
+    if (cmd.kind === "scenario") {
+      expect(cmd.input.scenario).toBe("challenge");
       expect(cmd.input.context).toBe("decision X");
       expect(cmd.input.positions).toEqual(["pro", "con"]);
     }
@@ -42,7 +43,8 @@ describe("parseArgs", () => {
       "--rounds", "4",
       "--models", "claude,codex",
     ]);
-    if (cmd.kind !== "challenge") throw new Error("expected challenge");
+    if (cmd.kind !== "scenario") throw new Error("expected scenario");
+    expect(cmd.input.scenario).toBe("challenge");
     expect(cmd.input.rounds).toBe(4);
     expect(cmd.input.models).toEqual(["claude", "codex"]);
   });
@@ -63,8 +65,9 @@ describe("parseArgs", () => {
       "--code", "function f(){}",
       "--focus", "bugs,security",
     ]);
-    expect(cmd.kind).toBe("review");
-    if (cmd.kind === "review") {
+    expect(cmd.kind).toBe("scenario");
+    if (cmd.kind === "scenario") {
+      expect(cmd.input.scenario).toBe("review");
       expect(cmd.input.code).toBe("function f(){}");
       expect(cmd.input.focus).toEqual(["bugs", "security"]);
     }
@@ -72,12 +75,37 @@ describe("parseArgs", () => {
 
   test("should parse review with --git-ref", () => {
     const cmd = parseArgs(["review", "--git-ref", "feature/auth"]);
-    if (cmd.kind !== "review") throw new Error("expected review");
+    if (cmd.kind !== "scenario") throw new Error("expected scenario");
+    expect(cmd.input.scenario).toBe("review");
     expect(cmd.input.gitRef).toBe("feature/auth");
   });
 
   test("should error on unknown subcommand", () => {
     const cmd = parseArgs(["bogus"]);
     expect(cmd.kind).toBe("error");
+  });
+
+  test("should reject --position on a focus-driven scenario", () => {
+    const cmd = parseArgs(["review", "--position", "x"]);
+    expect(cmd.kind).toBe("error");
+  });
+
+  test("should reject --focus on an args-driven scenario", () => {
+    const cmd = parseArgs(["challenge", "--context", "x", "--focus", "bugs"]);
+    expect(cmd.kind).toBe("error");
+  });
+
+  test("should accept user-defined scenarios via override map", () => {
+    const cmd = parseArgs(
+      ["mydiscuss", "--context", "x", "--position", "a", "--position", "b"],
+      {
+        mydiscuss: {
+          positions_from: "args",
+          prompts: { system: "{{position}}", round: "{{context}}", history_entry: "" },
+        },
+      },
+    );
+    if (cmd.kind !== "scenario") throw new Error(`expected scenario, got ${cmd.kind}`);
+    expect(cmd.input.scenario).toBe("mydiscuss");
   });
 });
