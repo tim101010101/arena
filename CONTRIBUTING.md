@@ -1,6 +1,6 @@
-# Contributing to Arena MCP
+# Contributing to Arena
 
-Thank you for your interest in contributing to Arena MCP!
+Thank you for your interest in contributing to Arena!
 
 ## Development Setup
 

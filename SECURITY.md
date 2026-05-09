@@ -8,7 +8,7 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in Arena MCP, please report it by:
+If you discover a security vulnerability in Arena, please report it by:
 
 1. **Do NOT open a public issue**
 2. Email the maintainers or use GitHub's private vulnerability reporting feature
@@ -22,7 +22,7 @@ We will respond within 48 hours and work with you to address the issue.
 
 ## Security Best Practices
 
-When using Arena MCP:
+When using Arena:
 
 - **Never commit API keys** - Use environment variables
 - **Validate all inputs** - Especially when accepting code or commands
@@ -33,7 +33,7 @@ When using Arena MCP:
 
 ## Known Security Considerations
 
-- Arena MCP executes external CLI commands - ensure you trust the agent CLIs you install
+- Arena executes external CLI commands - ensure you trust the agent CLIs you install
 - Agent responses are not sanitized - review outputs before using in production
 - Parallel mode can generate high API costs - monitor usage
 - Session data is stored in memory - sensitive information is not persisted

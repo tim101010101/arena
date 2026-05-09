@@ -13,9 +13,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Version](https://img.shields.io/github/v/release/tim101010101/arena)](https://github.com/tim101010101/arena/releases)
 
-**A position-driven adversarial arena for AI agents.** Host provides context and 2+ opposing positions; arena dispatches local CLI models (Claude, Codex, Gemini, OpenAI) to argue each position over multiple rounds and returns the transcript.
+**A position-driven adversarial arena for AI agents.** Host provides context and 2+ opposing positions; arena dispatches local CLI models (Claude, Codex, Gemini, OpenAI, Kimi) to argue each position over multiple rounds and returns the transcript.
 
-Available as an MCP server **and** a standalone CLI.
+A standalone CLI — invoke it from your shell, scripts, or any agent that can run shell commands.
 
 ## Mental model
 
@@ -23,15 +23,13 @@ Available as an MCP server **and** a standalone CLI.
 - **Position is the unit, not the model.** Adversarial value comes from clashing stances, not from "which model wins". Same model with two different system prompts is a valid pair if no other CLI is available.
 - **Arena owns model dispatch.** It picks distinct models when multiple CLIs are healthy, falls back to reusing one when not.
 
-## Tools
+## Subcommands
 
-| Tool | Purpose |
+| Subcommand | Purpose |
 |---|---|
-| `arena_challenge` | Core. Run N positions over R rounds against the supplied context. |
-| `arena_review` | Code-review preset over `arena_challenge`. Spawns attacker positions (default: bug-hunter + security-auditor) on the supplied code/diff. |
-| `arena_health` | List agent CLIs and their availability. |
-
-`arena_debate` and `arena_judge` were removed — debates collapsed into challenges (every debate is positions clashing), and the host LLM is the natural judge of returned transcripts.
+| `arena challenge` | Core. Run N positions over R rounds against the supplied context. |
+| `arena review` | Code-review preset over `arena challenge`. Spawns attacker positions (default: bug-hunter + security-auditor) on the supplied code/diff. |
+| `arena health` | List agent CLIs and their availability. |
 
 ## Install
 
@@ -42,7 +40,7 @@ npm install -g @codex-ai/cli              # for "codex" / "openai" / "gemini"
 uv tool install kimi-cli                  # for "kimi" (or: pipx install kimi-cli)
 
 # Arena itself
-npm install -g arena-mcp     # or: npx arena-mcp
+npm install -g arena-debate     # or: npx arena-debate
 ```
 
 ## CLI usage
@@ -67,44 +65,6 @@ arena challenge --context "..." --position a --position b --models claude,codex
 arena health
 arena --version
 arena --help
-
-# Start MCP server (for use from MCP-capable hosts)
-arena            # default behavior
-arena mcp        # explicit
-```
-
-## MCP usage
-
-Add to your MCP host configuration:
-
-```json
-{
-  "mcpServers": {
-    "arena": {
-      "command": "npx",
-      "args": ["-y", "arena-mcp"],
-      "env": { "ARENA_TIMEOUT_MS": "120000", "ARENA_DEFAULT_ROUNDS": "3" }
-    }
-  }
-}
-```
-
-Then call from the host:
-
-```ts
-arena_challenge({
-  context: "Plan: rewrite session middleware in Rust.",
-  positions: [
-    "Pragmatist: keep TypeScript, fix the GC pauses with pooling.",
-    "Rust advocate: rewrite for memory safety + zero-cost abstractions."
-  ],
-  rounds: 2
-})
-
-arena_review({
-  sources: [{ type: "git_ref", ref: "feature/new-auth" }],
-  focus: ["bugs", "security"]
-})
 ```
 
 ## Configuration (env vars)
@@ -115,7 +75,7 @@ arena_review({
 | `ARENA_DEFAULT_ROUNDS` | `3` | Default rounds when not specified |
 | `ARENA_DEFAULT_MODE` | `parallel` | Reserved (challenge runs sequentially) |
 | `ARENA_MAX_CONTEXT_SIZE` | `1000000` | Max bytes from `sources` |
-| `ARENA_CLAUDE_MODEL` / `ARENA_CODEX_MODEL` / `ARENA_GEMINI_MODEL` / `ARENA_OPENAI_MODEL` | CLI default | Per-adapter model override |
+| `ARENA_CLAUDE_MODEL` / `ARENA_CODEX_MODEL` / `ARENA_GEMINI_MODEL` / `ARENA_OPENAI_MODEL` / `ARENA_KIMI_MODEL` | CLI default | Per-adapter model override |
 
 ## Dispatch behavior
 
@@ -136,8 +96,7 @@ fighter[i].model = pool[i % pool.length]
 
 ```
 src/
-├── index.ts            # entry: dispatches to MCP or CLI
-├── mcp.ts              # MCP server (stdio)
+├── index.ts            # entry: parses argv and runs the CLI
 ├── cli-runner.ts       # CLI command runner
 ├── orchestrator.ts     # slot-based round runner
 ├── context.ts          # source acquisition (raw / git_ref / files / patch)

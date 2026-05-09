@@ -10,8 +10,6 @@ import { acquireContext } from "./context";
 const HELP = `arena — multi-agent adversarial arena
 
 Usage:
-  arena                              Start MCP server on stdio (default)
-  arena mcp                          Start MCP server on stdio
   arena health                       List available agent CLIs
   arena challenge --context <text>   Run an adversarial challenge
                   --position <text>  Position (repeat for each side, min 2)

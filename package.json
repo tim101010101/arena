@@ -1,7 +1,7 @@
 {
-  "name": "arena-mcp",
+  "name": "arena-debate",
   "version": "0.1.3",
-  "description": "Position-driven adversarial AI arena — host supplies opposing stances, arena runs the debate. Available as MCP server and CLI.",
+  "description": "Position-driven adversarial debate CLI — host supplies opposing stances, arena runs the debate across local model CLIs (Claude, Codex, Gemini, OpenAI, Kimi).",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -13,8 +13,6 @@
   "author": "tim101010101",
   "license": "MIT",
   "keywords": [
-    "mcp",
-    "model-context-protocol",
     "ai-agents",
     "multi-agent",
     "adversarial",
@@ -46,7 +44,6 @@
     "eval:list": "bun evals/runner/index.ts list"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.8.0",
     "zod": "^3.24.0"
   },
   "devDependencies": {

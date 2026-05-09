@@ -1,7 +1,6 @@
 import type { ReviewFocus } from "./review";
 
 export type CliCommand =
-  | { kind: "mcp" }
   | { kind: "health" }
   | { kind: "help" }
   | { kind: "version" }
@@ -116,10 +115,9 @@ function parseReview(rest: string[]): CliCommand {
 }
 
 export function parseArgs(argv: string[]): CliCommand {
-  if (argv.length === 0) return { kind: "mcp" };
+  if (argv.length === 0) return { kind: "help" };
   const [head, ...rest] = argv;
   switch (head) {
-    case "mcp": return { kind: "mcp" };
     case "health": return { kind: "health" };
     case "--help":
     case "-h":

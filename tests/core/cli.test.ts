@@ -2,12 +2,8 @@ import { describe, test, expect } from "bun:test";
 import { parseArgs } from "../../src/core/cli";
 
 describe("parseArgs", () => {
-  test("should default to MCP server when no args", () => {
-    expect(parseArgs([])).toEqual({ kind: "mcp" });
-  });
-
-  test("should treat 'mcp' subcommand as MCP server", () => {
-    expect(parseArgs(["mcp"])).toEqual({ kind: "mcp" });
+  test("should default to help when no args", () => {
+    expect(parseArgs([]).kind).toBe("help");
   });
 
   test("should parse 'health' subcommand", () => {
