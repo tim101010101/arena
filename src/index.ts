@@ -4,8 +4,7 @@ import { runCli } from "./cli-runner";
 import { loadUserConfig } from "./config/loader";
 import { resolveConfig } from "./config/resolve";
 import { setActiveModels } from "./config/defaults";
-import { createRequire } from "module";
-const { version } = createRequire(import.meta.url)("../package.json");
+import { VERSION as version } from "./version";
 
 registerAllAdapters();
 
