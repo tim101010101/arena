@@ -1,6 +1,6 @@
 import { test, expect } from "bun:test";
 import { ProfileEntry } from "../../src/adapters/profile-entry";
-import type { BinaryAdapter, AgentRequest, AgentResponse, HealthResult } from "../../src/adapters/base";
+import type { AgentAdapter, BinaryAdapter, AgentRequest, AgentResponse, HealthResult } from "../../src/adapters/base";
 
 class FakeBinary implements BinaryAdapter {
   readonly bin = "fake";
@@ -12,9 +12,20 @@ class FakeBinary implements BinaryAdapter {
   }
 }
 
+test("AgentAdapter interface no longer requires name", () => {
+  const a: AgentAdapter = {
+    id: "x",
+    healthCheck: async () => ({ ok: true, latency_ms: 0 }),
+    execute: async () => ({ content: "", agent: "x", latency_ms: 0 }),
+  };
+  expect(a.id).toBe("x");
+  // @ts-expect-error  name is no longer a member
+  a.name;
+});
+
 test("ProfileEntry forwards execute with its profile id", async () => {
   const bin = new FakeBinary();
-  const entry = new ProfileEntry("glm", "GLM (opencode)", bin);
+  const entry = new ProfileEntry("glm", bin);
   const r = await entry.execute({ prompt: "x", timeout_ms: 1000 });
   expect(r.agent).toBe("glm");
   expect(bin.calls[0][0]).toBe("glm");
@@ -22,8 +33,14 @@ test("ProfileEntry forwards execute with its profile id", async () => {
 
 test("ProfileEntry delegates healthCheck to binary", async () => {
   const bin = new FakeBinary();
-  const entry = new ProfileEntry("glm", "GLM (opencode)", bin);
+  const entry = new ProfileEntry("glm", bin);
   const r = await entry.healthCheck();
   expect(r.ok).toBe(true);
   expect(r.latency_ms).toBe(1);
+});
+
+test("ProfileEntry exposes bin via readonly getter", () => {
+  const bin = new FakeBinary();
+  const entry = new ProfileEntry("glm", bin);
+  expect(entry.bin).toBe("fake");
 });

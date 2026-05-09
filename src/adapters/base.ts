@@ -25,7 +25,6 @@ export interface HealthResult {
 
 export interface AgentAdapter {
   readonly id: string;
-  readonly name: string;
   healthCheck(): Promise<HealthResult>;
   execute(req: AgentRequest): Promise<AgentResponse>;
 }

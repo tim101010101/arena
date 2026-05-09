@@ -3,9 +3,10 @@ import type { AgentAdapter, BinaryAdapter, AgentRequest, AgentResponse, HealthRe
 export class ProfileEntry implements AgentAdapter {
   constructor(
     readonly id: string,
-    readonly name: string,
     private binary: BinaryAdapter,
   ) {}
+
+  get bin(): string { return this.binary.bin; }
 
   healthCheck(): Promise<HealthResult> {
     return this.binary.healthCheck();

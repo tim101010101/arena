@@ -47,7 +47,7 @@ export const BUILTIN_DEFAULTS: Record<string, ModelConfig> = {
   openai: {
     enabled: true,
     bin: "codex",
-    model: AGENT_MODELS.openai || "gpt-4.1",
+    model: AGENT_MODELS.openai ?? "gpt-4.1",
     env: {},
     command: {
       args: [

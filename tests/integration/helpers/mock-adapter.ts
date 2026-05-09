@@ -11,7 +11,6 @@ export interface MockAdapterConfig {
 
 export class MockAdapter implements AgentAdapter {
   readonly id: string;
-  readonly name: string;
   public callHistory: AgentRequest[] = [];
 
   private response: string;
@@ -22,7 +21,6 @@ export class MockAdapter implements AgentAdapter {
 
   constructor(config: MockAdapterConfig) {
     this.id = config.id;
-    this.name = `Mock ${config.id}`;
     this.response = config.response || `Response from ${config.id}`;
     this.delay = config.delay_ms || 0;
     this.shouldFail = config.shouldFail || false;

@@ -3,6 +3,7 @@ import { buildArgsFor } from "../src/adapters/build-args";
 import { registry } from "../src/adapters/registry";
 import { registerAllAdapters } from "../src/adapters/register-all";
 import { setActiveModels, BUILTIN_DEFAULTS } from "../src/config/defaults";
+import { ProfileEntry } from "../src/adapters/profile-entry";
 
 beforeAll(() => {
   setActiveModels({ ...BUILTIN_DEFAULTS });
@@ -131,8 +132,8 @@ describe("registry — profile sharing", () => {
     const a = registry.get("openai");
     const b = registry.get("codex");
     expect(a).not.toBe(b);
-    expect((a as any).binary.bin).toBe("codex");
-    expect((b as any).binary.bin).toBe("codex");
+    expect((a as ProfileEntry).bin).toBe("codex");
+    expect((b as ProfileEntry).bin).toBe("codex");
   });
 });
 
