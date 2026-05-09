@@ -29,3 +29,9 @@ export interface AgentAdapter {
   healthCheck(): Promise<HealthResult>;
   execute(req: AgentRequest): Promise<AgentResponse>;
 }
+
+export interface BinaryAdapter {
+  readonly bin: string;
+  healthCheck(): Promise<HealthResult>;
+  execute(profileId: string, req: AgentRequest): Promise<AgentResponse>;
+}

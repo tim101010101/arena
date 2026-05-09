@@ -6,8 +6,6 @@ import { resolveConfig } from "./config/resolve";
 import { setActiveModels } from "./config/defaults";
 import { VERSION as version } from "./version";
 
-registerAllAdapters();
-
 let resolved;
 try {
   const loaded = loadUserConfig();
@@ -18,6 +16,7 @@ try {
 }
 
 setActiveModels(resolved.models);
+registerAllAdapters();
 
 const cmd = parseArgs(process.argv.slice(2), resolved.scenarios);
 

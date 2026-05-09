@@ -121,4 +121,16 @@ describe("config validation", () => {
     expect(result.exitCode).toBe(1);
     expect(result.stderr.toString()).toContain("Invalid config");
   });
+
+  test("should_pick_up_arbitrary_model_env_var", () => {
+    const result = runConfigTest(
+      `const { config } = require("./src/config"); console.log(JSON.stringify(config.models));`,
+      { ARENA_GLM_MODEL: "glm-4.6", ARENA_ACW_MODEL: "gpt-5-codex", ARENA_FOO_MODEL: "bar" },
+    );
+    expect(result.exitCode).toBe(0);
+    const m = JSON.parse(result.stdout.toString());
+    expect(m.glm).toBe("glm-4.6");
+    expect(m.acw).toBe("gpt-5-codex");
+    expect(m.foo).toBe("bar");
+  });
 });
