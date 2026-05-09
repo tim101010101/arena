@@ -4,7 +4,7 @@ export type ArgToken =
 
 export interface ModelCommand {
   args: ArgToken[];
-  output: { via: "stdout" } | { via: "file"; tmp_prefix?: string };
+  output: { via: "stdout" } | { via: "file" };
 }
 
 export interface ModelConfig {

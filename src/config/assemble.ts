@@ -5,7 +5,6 @@ import { renderString, renderCommand } from "../config/template";
 export interface AssembledRequest {
   args: string[];
   outputVia: "stdout" | "file";
-  tmpPrefix?: string;
 }
 
 export function buildHistoryString(req: AgentRequest, entryTpl: string): string {
@@ -52,6 +51,5 @@ export function assembleCommand(
   return {
     args,
     outputVia: cfg.command.output.via,
-    tmpPrefix: cfg.command.output.via === "file" ? cfg.command.output.tmp_prefix : undefined,
   };
 }

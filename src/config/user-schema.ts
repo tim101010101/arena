@@ -14,7 +14,7 @@ const ModelCommandSchema = z.object({
   args: z.array(ArgTokenSchema).min(1),
   output: z.discriminatedUnion("via", [
     z.object({ via: z.literal("stdout") }),
-    z.object({ via: z.literal("file"), tmp_prefix: z.string().optional() }),
+    z.object({ via: z.literal("file") }),
   ]),
 });
 

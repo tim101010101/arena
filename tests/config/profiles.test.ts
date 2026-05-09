@@ -3,6 +3,8 @@ import { BUILTIN_DEFAULTS, setActiveModels } from "../../src/config/defaults";
 import { buildArgsFor } from "../../src/adapters/build-args";
 import { registry } from "../../src/adapters/registry";
 import { registerAllAdapters } from "../../src/adapters/register-all";
+import { ModelConfigSchema } from "../../src/config/user-schema";
+import { assembleCommand } from "../../src/config/assemble";
 
 test("glm profile uses opencode binary, stdout output", () => {
   expect(BUILTIN_DEFAULTS.glm.bin).toBe("opencode");
@@ -39,4 +41,26 @@ test("glm and acw register through profile-driven flow", () => {
   registerAllAdapters({ force: true });
   expect(registry.has("glm")).toBe(true);
   expect(registry.has("acw")).toBe(true);
+});
+
+test("ModelConfigSchema strips tmp_prefix from file output (field removed)", () => {
+  const result = ModelConfigSchema.safeParse({
+    bin: "codex",
+    command: {
+      args: ["{{bin}}"],
+      output: { via: "file", tmp_prefix: "x" },
+    },
+    prompt_assembly: "{{prompt}}",
+    history_entry: "",
+  });
+  expect(result.success).toBe(true);
+  if (result.success) {
+    expect((result.data.command.output as Record<string, unknown>).tmp_prefix).toBeUndefined();
+  }
+});
+
+test("AssembledRequest no longer carries tmpPrefix", () => {
+  const cfg = BUILTIN_DEFAULTS.acw;
+  const a = assembleCommand(cfg, { prompt: "p", timeout_ms: 1000 }, "/tmp/x");
+  expect("tmpPrefix" in a).toBe(false);
 });
