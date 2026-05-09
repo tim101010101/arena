@@ -1,3 +1,4 @@
+import { Readable, Writable } from "node:stream";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
@@ -202,6 +203,8 @@ export async function handleMcpCall(
 export async function runMcpServer(
   scenarios: Record<string, ScenarioConfig>,
   version: string,
+  stdin: Readable = process.stdin as unknown as Readable,
+  stdout: Writable = process.stdout as unknown as Writable,
 ): Promise<void> {
   const server = new Server(
     { name: "arena", version },
@@ -217,7 +220,12 @@ export async function runMcpServer(
     return handleMcpCall(name, args, scenarios);
   });
 
-  const transport = new StdioServerTransport();
+  const transport = new StdioServerTransport(stdin, stdout);
+  stdin.resume();
   await server.connect(transport);
   process.stderr.write(`arena MCP server v${version} started\n`);
+  await new Promise<void>((resolve) => {
+    stdin.once("close", resolve);
+    stdin.once("end", resolve);
+  });
 }

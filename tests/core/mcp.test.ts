@@ -1,5 +1,6 @@
 import { describe, test, expect, beforeAll, beforeEach } from "bun:test";
-import { buildToolsForScenarios, handleMcpCall } from "../../src/core/mcp";
+import { PassThrough } from "node:stream";
+import { buildToolsForScenarios, handleMcpCall, runMcpServer } from "../../src/core/mcp";
 import { registry } from "../../src/adapters/registry";
 import { MockAdapter } from "../integration/helpers/mock-adapter";
 import type { ScenarioConfig } from "../../src/config/scenarios";
@@ -298,4 +299,63 @@ describe("handleMcpCall", () => {
       (registry as unknown as { healthCheckAll: () => unknown }).healthCheckAll = original;
     }
   });
+});
+
+// ---------------------------------------------------------------------------
+// runMcpServer — lifecycle and protocol
+// ---------------------------------------------------------------------------
+
+describe("runMcpServer", () => {
+  test("should_stay_alive_while_stdin_is_open", async () => {
+    const stdin = new PassThrough();
+    const stdout = new PassThrough();
+    stdout.resume(); // drain output so writes don't block
+
+    let completed = false;
+    const serverPromise = runMcpServer({}, "test", stdin, stdout).then(() => {
+      completed = true;
+    });
+
+    await new Promise((r) => setTimeout(r, 50));
+    expect(completed).toBe(false);
+
+    stdin.push(null);
+    await serverPromise;
+    expect(completed).toBe(true);
+  }, 3000);
+
+  test("should_respond_to_initialize_request", async () => {
+    const stdin = new PassThrough();
+    const stdout = new PassThrough();
+
+    const chunks: Buffer[] = [];
+    stdout.on("data", (c: Buffer) => chunks.push(c));
+
+    const serverPromise = runMcpServer({}, "0.0.0-test", stdin, stdout);
+
+    const initRequest = JSON.stringify({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "initialize",
+      params: {
+        protocolVersion: "2024-11-05",
+        capabilities: {},
+        clientInfo: { name: "test-client", version: "0.0.1" },
+      },
+    }) + "\n";
+
+    stdin.write(initRequest);
+    await new Promise((r) => setTimeout(r, 200));
+
+    const output = Buffer.concat(chunks).toString("utf-8");
+    const lines = output.split("\n").filter(Boolean);
+    expect(lines.length).toBeGreaterThan(0);
+    const response = JSON.parse(lines[0]);
+    expect(response.id).toBe(1);
+    expect(response.result).toBeDefined();
+    expect(response.result.serverInfo.name).toBe("arena");
+
+    stdin.push(null);
+    await serverPromise;
+  }, 5000);
 });
