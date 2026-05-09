@@ -2,7 +2,7 @@ import { dispatch, roundRobin, type Fighter } from "./dispatch";
 import { scenarioSystemPrompt, scenarioRoundPrompt } from "./prompts";
 import { orchestrateRounds, type AgentSlot } from "../orchestrator";
 import type { AgentResponse } from "../adapters/base";
-import type { HistoryEntry } from "../types";
+import type { HistoryEntry, OnProgress } from "../types";
 import type { ScenarioConfig } from "../config/scenarios";
 import { BUILTIN_SCENARIOS } from "../config/scenarios";
 import { ARENA_TIMEOUT_MS, DEFAULT_ROUNDS } from "../constants";
@@ -15,6 +15,12 @@ export interface ScenarioRunInput {
   rounds?: number;
   timeout_ms?: number;
   scenario?: ScenarioConfig;
+  perf?: {
+    output_max_words?: number | null;
+    history_window?: number | null;
+    stream_progress?: boolean;
+  };
+  onProgress?: OnProgress;
 }
 
 export interface ScenarioResult {
@@ -48,9 +54,15 @@ export async function runScenario(input: ScenarioRunInput): Promise<ScenarioResu
         round,
         history.map((r): HistoryEntry => ({ role: "agent", agent: r.agent, content: r.content })),
         scenario.prompts,
+        { output_max_words: input.perf?.output_max_words ?? null },
       ),
       timeout_ms: timeout,
     }),
+    undefined,
+    {
+      history_window: input.perf?.history_window ?? null,
+      onProgress: input.onProgress,
+    },
   );
 
   return { fighters, rounds: transcript };

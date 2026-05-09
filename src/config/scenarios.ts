@@ -24,9 +24,10 @@ const CHALLENGE_SYSTEM = [
 ].join("\n");
 
 const CHALLENGE_ROUND =
-  "Subject under review:\n{{context}}\n\nRound: {{round}}" +
+  "Subject under review:\n{{context}}\n\nRespond from your assigned position." +
   "{{#if history}}\n\nPrevious responses:\n{{history}}\n\n" +
-  "Respond from your assigned position. Address the latest opposing arguments directly.{{/if}}";
+  "Address the latest opposing arguments directly. (Round {{round}}){{/if}}" +
+  "{{#if output_max_words}}\n\nRespond in ≤{{output_max_words}} words. One paragraph + 3-5 bullet rebuttals. No code unless strictly necessary.{{/if}}";
 
 const CHALLENGE_HISTORY_ENTRY = "[{{agent}}]: {{content}}";
 

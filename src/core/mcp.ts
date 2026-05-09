@@ -6,7 +6,7 @@ import {
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import type { ScenarioConfig } from "../config/scenarios";
-import type { ContextSource } from "../types";
+import type { ContextSource, OnProgress } from "../types";
 import { registry } from "../adapters/registry";
 import { availableModels } from "./availability";
 import { runScenario } from "./scenario";
@@ -136,10 +136,17 @@ type McpToolResult = {
   isError?: boolean;
 };
 
+export interface HandleMcpCallOptions {
+  progressToken?: string | number;
+  sendNotification?: (method: string, params: unknown) => Promise<void> | void;
+  totalSlots?: number;
+}
+
 export async function handleMcpCall(
   name: string,
   args: unknown,
   scenarios: Record<string, ScenarioConfig>,
+  options?: HandleMcpCallOptions,
 ): Promise<McpToolResult> {
   if (name === "health") {
     const results = await registry.healthCheckAll();
@@ -163,6 +170,20 @@ export async function handleMcpCall(
 
     let context: string;
     let positions: string[];
+    let onProgress: OnProgress | undefined;
+    let doneCount = 0;
+
+    if (options?.progressToken !== undefined && options.sendNotification) {
+      const { progressToken, sendNotification } = options;
+      onProgress = (event) => {
+        doneCount++;
+        sendNotification("notifications/progress", {
+          progressToken,
+          progress: doneCount,
+          message: `[round ${event.round}][${event.fighter}] done`,
+        });
+      };
+    }
 
     if (scenario.positions_from === "args") {
       const a = args as { context: string; positions: string[]; rounds?: number; models?: string[] };
@@ -175,6 +196,7 @@ export async function handleMcpCall(
         rounds: a.rounds,
         availableModels: available,
         scenario,
+        onProgress,
       });
       return { content: [{ type: "text", text: formatTranscript(result) }] };
     } else {
@@ -189,6 +211,7 @@ export async function handleMcpCall(
         rounds: a.rounds,
         availableModels: available,
         scenario,
+        onProgress,
       });
       return { content: [{ type: "text", text: formatTranscript(result) }] };
     }
@@ -217,7 +240,12 @@ export async function runMcpServer(
 
   server.setRequestHandler(CallToolRequestSchema, async (req) => {
     const { name, arguments: args } = req.params;
-    return handleMcpCall(name, args, scenarios);
+    const progressToken = (req.params as { _meta?: { progressToken?: string | number } })._meta
+      ?.progressToken;
+    return handleMcpCall(name, args, scenarios, {
+      progressToken,
+      sendNotification: (method, params) => server.notification({ method, params } as Parameters<typeof server.notification>[0]),
+    });
   });
 
   const transport = new StdioServerTransport(stdin, stdout);

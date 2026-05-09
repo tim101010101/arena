@@ -15,6 +15,7 @@ export function scenarioRoundPrompt(
   round: number,
   history: HistoryEntry[],
   prompts: ScenarioPrompts = BUILTIN_SCENARIOS.challenge.prompts,
+  opts?: { output_max_words?: number | null },
 ): string {
   const historyStr = history.length
     ? history
@@ -32,5 +33,6 @@ export function scenarioRoundPrompt(
     context,
     round: String(round),
     history: historyStr,
+    output_max_words: opts?.output_max_words ? String(opts.output_max_words) : "",
   });
 }

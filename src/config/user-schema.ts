@@ -1,5 +1,12 @@
 import { z } from "zod";
 
+export const PerfConfigSchema = z.object({
+  output_max_words: z.number().int().positive().nullable().default(null),
+  history_window: z.number().int().positive().nullable().default(null),
+  stream_progress: z.boolean().default(false),
+});
+export type PerfConfig = z.infer<typeof PerfConfigSchema>;
+
 const ArgTokenSchema: z.ZodType<unknown> = z.lazy(() =>
   z.union([
     z.string(),
@@ -44,6 +51,7 @@ export const ScenarioConfigSchema = z
     focus_positions: z.record(z.string().min(1), z.string().min(1)).optional(),
     models: z.record(z.string().min(1), ModelConfigSchema.partial()).optional(),
     prompts: ScenarioPromptsSchema.optional(),
+    perf: PerfConfigSchema.partial().optional(),
   })
   .refine((s) => s.inherits || (s.positions_from && s.prompts), {
     message: "scenario without 'inherits' must declare both 'positions_from' and 'prompts'",
@@ -55,6 +63,7 @@ export const UserConfigSchema = z.object({
     .object({
       timeout_ms: z.number().int().min(1000).max(600_000).optional(),
       models: z.record(z.string().min(1), ModelConfigSchema).optional(),
+      perf: PerfConfigSchema.partial().optional(),
     })
     .optional(),
   scenarios: z.record(z.string().min(1), ScenarioConfigSchema).optional(),

@@ -1,4 +1,5 @@
 import type { AgentAdapter, AgentRequest, AgentResponse } from "./adapters/base";
+import type { OnProgress } from "./types";
 import { registry } from "./adapters/registry";
 
 export type ExecutionMode = "sequential" | "parallel";
@@ -12,6 +13,8 @@ export interface OrchestratorRequest {
   slots: AgentSlot[];
   buildRequest: (slot: AgentSlot) => AgentRequest;
   mode: ExecutionMode;
+  onProgress?: OnProgress;
+  round?: number;
 }
 
 export interface OrchestratorResult {
@@ -39,21 +42,38 @@ async function executeSlot(
 
 export async function orchestrate(request: OrchestratorRequest): Promise<OrchestratorResult> {
   const pairs = request.slots.map((slot) => ({ slot, adapter: registry.get(slot.model) }));
+  const fireProgress = (slot: AgentSlot, response: AgentResponse) => {
+    try {
+      request.onProgress?.({ round: request.round ?? 0, fighter: slot.id, response });
+    } catch {}
+  };
   let responses: AgentResponse[];
 
   if (request.mode === "parallel") {
-    responses = await Promise.all(
-      pairs.map(({ slot, adapter }) => executeSlot(slot, adapter, request.buildRequest(slot))),
+    const promises = pairs.map(({ slot, adapter }) =>
+      executeSlot(slot, adapter, request.buildRequest(slot)).then((r) => {
+        fireProgress(slot, r);
+        return r;
+      }),
     );
+    responses = await Promise.all(promises);
   } else {
     responses = [];
     for (const { slot, adapter } of pairs) {
-      responses.push(await executeSlot(slot, adapter, request.buildRequest(slot)));
+      const r = await executeSlot(slot, adapter, request.buildRequest(slot));
+      fireProgress(slot, r);
+      responses.push(r);
     }
   }
 
   const failed = responses.filter((r) => r.error).map((r) => r.agent);
   return { responses, failed };
+}
+
+export interface OrchestrationOptions {
+  onRound?: (round: number, responses: AgentResponse[]) => void;
+  history_window?: number | null;
+  onProgress?: OnProgress;
 }
 
 export async function orchestrateRounds(
@@ -62,15 +82,20 @@ export async function orchestrateRounds(
   mode: ExecutionMode,
   buildRequest: (slot: AgentSlot, round: number, history: AgentResponse[]) => AgentRequest,
   onRound?: (round: number, responses: AgentResponse[]) => void,
+  options?: { history_window?: number | null; onProgress?: OnProgress },
 ): Promise<AgentResponse[][]> {
   const allRounds: AgentResponse[][] = [];
   const history: AgentResponse[] = [];
 
   for (let round = 1; round <= rounds; round++) {
+    const window = options?.history_window;
+    const visibleHistory = window ? history.slice(-(window * slots.length)) : history;
     const result = await orchestrate({
       slots,
       mode,
-      buildRequest: (slot) => buildRequest(slot, round, history),
+      round,
+      onProgress: options?.onProgress,
+      buildRequest: (slot) => buildRequest(slot, round, visibleHistory),
     });
     allRounds.push(result.responses);
     history.push(...result.responses);

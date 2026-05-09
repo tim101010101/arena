@@ -1,4 +1,12 @@
 import { z } from "zod";
+import type { AgentResponse } from "./adapters/base";
+
+export interface ProgressEvent {
+  round: number;
+  fighter: string;
+  response: AgentResponse;
+}
+export type OnProgress = (event: ProgressEvent) => void;
 
 export const ContextSourceSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("raw"), code: z.string() }),

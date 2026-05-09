@@ -299,6 +299,51 @@ describe("handleMcpCall", () => {
       (registry as unknown as { healthCheckAll: () => unknown }).healthCheckAll = original;
     }
   });
+
+  // #5 MCP progress notifications
+  test("sendNotification is called once per fighter when progressToken is set", async () => {
+    const notifications: Array<{ method: string; params: unknown }> = [];
+    const result = await handleMcpCall(
+      "challenge",
+      {
+        context: "REST vs GraphQL",
+        positions: ["REST supporter", "GraphQL supporter"],
+        rounds: 1,
+        models: ["mcp-a", "mcp-b"],
+      },
+      { challenge: ARGS_SCENARIO },
+      {
+        progressToken: "tok-1",
+        sendNotification: (method, params) => { notifications.push({ method, params }); },
+      },
+    );
+
+    expect(result.isError).toBeUndefined();
+    expect(notifications).toHaveLength(2); // 1 round × 2 fighters
+    expect(notifications.every((n) => n.method === "notifications/progress")).toBe(true);
+    const progresses = notifications.map((n) => (n.params as { progress: number }).progress);
+    expect(progresses[0]).toBeLessThan(progresses[1]); // monotonically increasing
+    expect(notifications.every((n) => (n.params as { progressToken: string }).progressToken === "tok-1")).toBe(true);
+  });
+
+  test("no notifications sent when progressToken is absent", async () => {
+    const notifications: unknown[] = [];
+    await handleMcpCall(
+      "challenge",
+      {
+        context: "REST vs GraphQL",
+        positions: ["REST supporter", "GraphQL supporter"],
+        rounds: 1,
+        models: ["mcp-a", "mcp-b"],
+      },
+      { challenge: ARGS_SCENARIO },
+      {
+        sendNotification: (method, params) => { notifications.push({ method, params }); },
+      },
+    );
+
+    expect(notifications).toHaveLength(0);
+  });
 });
 
 // ---------------------------------------------------------------------------

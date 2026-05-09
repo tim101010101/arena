@@ -1,6 +1,7 @@
 import type { CliCommand, ScenarioInput } from "./core/cli";
-import type { ContextSource } from "./types";
+import type { ContextSource, OnProgress } from "./types";
 import type { ScenarioConfig } from "./config/scenarios";
+import type { PerfConfig } from "./config/user-schema";
 import { BUILTIN_SCENARIOS } from "./config/scenarios";
 import { runMcpServer } from "./core/mcp";
 import { registry } from "./adapters/registry";
@@ -54,6 +55,7 @@ async function runHealth(): Promise<void> {
 async function runScenarioCmd(
   input: ScenarioInput,
   scenario: ScenarioConfig,
+  perf?: Partial<PerfConfig>,
 ): Promise<void> {
   const checks = await registry.healthCheckAll();
   const available = availableModels(checks);
@@ -81,6 +83,16 @@ async function runScenarioCmd(
     positions = reviewPositions(input.focus, scenario);
   }
 
+  let onProgress: OnProgress | undefined;
+  if (perf?.stream_progress) {
+    onProgress = (event) => {
+      const preview = event.response.content.slice(0, 80).replace(/\n/g, " ");
+      process.stderr.write(
+        `[round ${event.round}][${event.fighter}] ${event.response.latency_ms}ms ${preview}\n`,
+      );
+    };
+  }
+
   const result = await runScenario({
     context,
     positions,
@@ -88,6 +100,8 @@ async function runScenarioCmd(
     rounds: input.rounds,
     availableModels: available,
     scenario,
+    perf,
+    onProgress,
   });
   console.log(formatTranscript(result));
 }

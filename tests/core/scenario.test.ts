@@ -2,6 +2,7 @@ import { describe, test, expect, beforeAll } from "bun:test";
 import { runScenario } from "../../src/core/scenario";
 import { registry } from "../../src/adapters/registry";
 import type { AgentAdapter, AgentRequest, AgentResponse, HealthResult } from "../../src/adapters/base";
+import type { ProgressEvent } from "../../src/types";
 
 class StubAdapter implements AgentAdapter {
   readonly id: string;
@@ -121,5 +122,22 @@ describe("runScenario", () => {
     });
 
     expect(result.fighters.every((f) => f.model === "stub-a")).toBe(true);
+  });
+
+  // #5 onProgress
+  test("onProgress fires once per fighter per round", async () => {
+    const events: ProgressEvent[] = [];
+    await runScenario({
+      context: "ctx",
+      positions: ["a", "b"],
+      availableModels: ["stub-a", "stub-b"],
+      rounds: 2,
+      onProgress: (e) => events.push(e),
+    });
+
+    expect(events).toHaveLength(4); // 2 rounds × 2 fighters
+    const rounds = events.map((e) => e.round);
+    expect(rounds.filter((r) => r === 1)).toHaveLength(2);
+    expect(rounds.filter((r) => r === 2)).toHaveLength(2);
   });
 });

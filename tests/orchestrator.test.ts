@@ -2,6 +2,7 @@ import { describe, test, expect } from "bun:test";
 import { orchestrate, orchestrateRounds } from "../src/orchestrator";
 import { registry } from "../src/adapters/registry";
 import type { AgentAdapter, AgentRequest, AgentResponse, HealthResult } from "../src/adapters/base";
+import type { ProgressEvent } from "../src/types";
 
 class TestAdapter implements AgentAdapter {
   readonly id: string;
@@ -157,5 +158,119 @@ describe("orchestrateRounds", () => {
     );
 
     expect(roundsCalled).toEqual([1, 2, 3]);
+  });
+
+  // #4 history_window
+  test("history_window limits visible history passed to buildRequest", async () => {
+    registry.register(new TestAdapter("test-a", "resp-a"));
+    registry.register(new TestAdapter("test-b", "resp-b"));
+    const slots = [
+      { id: "f1", model: "test-a" },
+      { id: "f2", model: "test-b" },
+    ];
+    const historySizes: number[] = [];
+
+    await orchestrateRounds(
+      slots,
+      4,
+      "sequential",
+      (_slot, _round, history) => {
+        historySizes.push(history.length);
+        return { prompt: "x", timeout_ms: 5000 };
+      },
+      undefined,
+      { history_window: 2 },
+    );
+
+    // round 4: only last 2 rounds × 2 slots = 4 responses visible
+    expect(historySizes[historySizes.length - 1]).toBe(4);
+    // round 1: always 0
+    expect(historySizes[0]).toBe(0);
+  });
+
+  test("history_window null passes full history (regression)", async () => {
+    const slots = [{ id: "f1", model: "test-a" }];
+    const historySizes: number[] = [];
+
+    await orchestrateRounds(
+      slots,
+      3,
+      "sequential",
+      (_slot, _round, history) => {
+        historySizes.push(history.length);
+        return { prompt: "x", timeout_ms: 5000 };
+      },
+      undefined,
+      { history_window: null },
+    );
+
+    expect(historySizes).toEqual([0, 1, 2]);
+  });
+
+  // #5 onProgress
+  test("onProgress fires per slot in parallel mode (fastest first)", async () => {
+    registry.register(new TestAdapter("fast", "fast", 10));
+    registry.register(new TestAdapter("medium", "med", 30));
+    registry.register(new TestAdapter("slow", "slow", 60));
+    const events: ProgressEvent[] = [];
+
+    await orchestrateRounds(
+      [
+        { id: "s-fast", model: "fast" },
+        { id: "s-medium", model: "medium" },
+        { id: "s-slow", model: "slow" },
+      ],
+      1,
+      "parallel",
+      () => ({ prompt: "x", timeout_ms: 5000 }),
+      undefined,
+      { onProgress: (e) => events.push(e) },
+    );
+
+    expect(events).toHaveLength(3);
+    expect(events[0].fighter).toBe("s-fast");
+    expect(events[1].fighter).toBe("s-medium");
+    expect(events[2].fighter).toBe("s-slow");
+  });
+
+  test("onProgress fires in slot order in sequential mode", async () => {
+    const slots = [
+      { id: "first", model: "test-a" },
+      { id: "second", model: "test-b" },
+    ];
+    const order: string[] = [];
+
+    await orchestrateRounds(
+      slots,
+      1,
+      "sequential",
+      () => ({ prompt: "x", timeout_ms: 5000 }),
+      undefined,
+      { onProgress: (e) => order.push(e.fighter) },
+    );
+
+    expect(order).toEqual(["first", "second"]);
+  });
+
+  test("onProgress error does not break orchestrate result", async () => {
+    const slots = [{ id: "f1", model: "test-a" }];
+    let result: AgentResponse[][] | undefined;
+
+    result = await orchestrateRounds(
+      slots,
+      1,
+      "sequential",
+      () => ({ prompt: "x", timeout_ms: 5000 }),
+      undefined,
+      {
+        onProgress: () => {
+          throw new Error("progress callback error");
+        },
+      },
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toHaveLength(1);
+    expect(result[0][0].error).toBeUndefined();
   });
 });
