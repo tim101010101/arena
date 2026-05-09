@@ -1,0 +1,52 @@
+// Copy this file to .arena.jsonc (project root) or ~/.config/arena/config.jsonc and customize.
+// All fields are optional — only include what you want to override.
+{
+  "version": 1,
+  "defaults": {
+    "models": {
+      // Override the model string for an official built-in adapter.
+      // "claude": { "model": "claude-opus-4-7" },
+
+      // --- Custom adapter examples ---
+      // Add any adapter not included in the built-in defaults by defining it here.
+      // The adapter will be registered and available in all scenarios.
+
+      // Example: GLM via opencode binary (stdout output)
+      // "glm": {
+      //   "enabled": true,
+      //   "bin": "opencode",
+      //   "model": "zhipuai/glm-5.1",
+      //   "command": {
+      //     "args": [
+      //       "{{bin}}", "run",
+      //       { "if": "model", "then": ["-m", "{{model}}"] },
+      //       "{{prompt}}"
+      //     ],
+      //     "output": { "via": "stdout" }
+      //   },
+      //   "prompt_assembly": "{{#if context}}Context:\n{{context}}\n\n{{/if}}{{#if system}}{{system}}\n\n{{/if}}{{prompt}}{{#if history}}\n\nPrevious discussion:\n{{history}}{{/if}}",
+      //   "history_entry": "[{{agent}}]: {{content}}"
+      // },
+
+      // Example: custom provider via codex binary (file output)
+      // "my-model": {
+      //   "enabled": true,
+      //   "bin": "codex",
+      //   "model": "your-model-id",
+      //   "command": {
+      //     "args": [
+      //       "{{bin}}", "exec", "--full-auto", "--skip-git-repo-check",
+      //       "-s", "read-only",
+      //       "-c", "model_provider=\"your-provider\"",
+      //       { "if": "model", "then": ["-m", "{{model}}"] },
+      //       "-o", "{{output_file}}", "{{prompt}}"
+      //     ],
+      //     "output": { "via": "file" }
+      //   },
+      //   "prompt_assembly": "{{#if context}}Context:\n{{context}}\n\n{{/if}}{{#if system}}{{system}}\n\n{{/if}}{{prompt}}{{#if history}}\n\nPrevious discussion:\n{{history}}{{/if}}",
+      //   "history_entry": "[{{agent}}]: {{content}}"
+      // }
+    }
+  },
+  "scenarios": {}
+}

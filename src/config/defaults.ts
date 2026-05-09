@@ -96,40 +96,6 @@ export const BUILTIN_DEFAULTS: Record<string, ModelConfig> = {
     history_entry: HISTORY_ENTRY,
   },
 
-  glm: {
-    enabled: true,
-    bin: "opencode",
-    model: AGENT_MODELS.glm ?? "zhipuai/glm-5.1",
-    env: {},
-    command: {
-      args: [
-        "{{bin}}", "run",
-        { if: "model", then: ["-m", "{{model}}"] },
-        "{{prompt}}",
-      ],
-      output: { via: "stdout" },
-    },
-    prompt_assembly: STD_ASSEMBLY,
-    history_entry: HISTORY_ENTRY,
-  },
-
-  acw: {
-    enabled: true,
-    bin: "codex",
-    model: AGENT_MODELS.acw ?? "gpt-5.5",
-    env: {},
-    command: {
-      args: [
-        "{{bin}}", "exec", "--full-auto", "--skip-git-repo-check", "-s", "read-only",
-        "-c", 'model_provider="acw"',
-        { if: "model", then: ["-m", "{{model}}"] },
-        "-o", "{{output_file}}", "{{prompt}}",
-      ],
-      output: { via: "file" },
-    },
-    prompt_assembly: STD_ASSEMBLY,
-    history_entry: HISTORY_ENTRY,
-  },
 };
 
 let activeModels: Record<string, ModelConfig> = { ...BUILTIN_DEFAULTS };
