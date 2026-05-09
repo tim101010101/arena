@@ -96,3 +96,13 @@ export const BUILTIN_DEFAULTS: Record<string, ModelConfig> = {
     history_entry: HISTORY_ENTRY,
   },
 };
+
+let activeModels: Record<string, ModelConfig> = { ...BUILTIN_DEFAULTS };
+
+export function setActiveModels(models: Record<string, ModelConfig>): void {
+  activeModels = models;
+}
+
+export function getModelConfig(id: string): ModelConfig {
+  return activeModels[id] ?? BUILTIN_DEFAULTS[id];
+}

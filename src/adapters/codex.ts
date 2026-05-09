@@ -1,7 +1,7 @@
 import type { AgentAdapter, AgentRequest, AgentResponse, HealthResult } from "./base";
 import { agentEnv, withTimeout, makeTempFile, cleanupTempFile, readStderr, readFileText, probeBinary, spawnProcess } from "../utils";
 import { ARENA_TIMEOUT_MS, AGENT_MODELS, HEALTH_CHECK_TIMEOUT_MS } from "../constants";
-import { BUILTIN_DEFAULTS } from "../config/defaults";
+import { getModelConfig } from "../config/defaults";
 import { assembleCommand } from "../config/assemble";
 import { renderCommand } from "../config/template";
 
@@ -14,8 +14,9 @@ export class CodexAdapter implements AgentAdapter {
   }
 
   buildArgs(model: string | undefined, outputFile: string, prompt: string): string[] {
-    return renderCommand(BUILTIN_DEFAULTS.codex.command, {
-      bin: BUILTIN_DEFAULTS.codex.bin,
+    const cfg = getModelConfig(this.id);
+    return renderCommand(cfg.command, {
+      bin: cfg.bin,
       model,
       prompt,
       output_file: outputFile,
@@ -26,7 +27,7 @@ export class CodexAdapter implements AgentAdapter {
     const t0 = Date.now();
     const timeout = req.timeout_ms || ARENA_TIMEOUT_MS;
     const tmpFile = await makeTempFile("codex");
-    const cfg = { ...BUILTIN_DEFAULTS.codex, model: AGENT_MODELS.codex };
+    const cfg = { ...getModelConfig(this.id), model: AGENT_MODELS.codex };
     const { args } = assembleCommand(cfg, req, tmpFile);
 
     const controller = new AbortController();

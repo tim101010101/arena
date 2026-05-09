@@ -1,7 +1,7 @@
 import type { AgentAdapter, AgentRequest, AgentResponse, HealthResult } from "./base";
 import { agentEnv, withTimeout, readStdout, readStderr, probeBinary, spawnProcess } from "../utils";
 import { ARENA_TIMEOUT_MS, AGENT_MODELS, HEALTH_CHECK_TIMEOUT_MS } from "../constants";
-import { BUILTIN_DEFAULTS } from "../config/defaults";
+import { getModelConfig } from "../config/defaults";
 import { assembleCommand } from "../config/assemble";
 
 export class KimiAdapter implements AgentAdapter {
@@ -13,7 +13,7 @@ export class KimiAdapter implements AgentAdapter {
   }
 
   buildArgs(req: AgentRequest): string[] {
-    return assembleCommand(BUILTIN_DEFAULTS.kimi, req).args;
+    return assembleCommand(getModelConfig(this.id), req).args;
   }
 
   async execute(req: AgentRequest): Promise<AgentResponse> {

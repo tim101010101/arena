@@ -1,7 +1,7 @@
 import type { AgentAdapter, AgentRequest, AgentResponse, HealthResult } from "./base";
 import { agentEnv, withTimeout, makeTempFile, cleanupTempFile, readStderr, readFileText, probeBinary, spawnProcess } from "../utils";
 import { ARENA_TIMEOUT_MS, AGENT_MODELS, HEALTH_CHECK_TIMEOUT_MS } from "../constants";
-import { BUILTIN_DEFAULTS } from "../config/defaults";
+import { getModelConfig } from "../config/defaults";
 import { assembleCommand } from "../config/assemble";
 import { renderCommand } from "../config/template";
 
@@ -14,8 +14,9 @@ export class OpenAIAdapter implements AgentAdapter {
   }
 
   buildArgs(model: string, outputFile: string, prompt: string): string[] {
-    return renderCommand(BUILTIN_DEFAULTS.openai.command, {
-      bin: BUILTIN_DEFAULTS.openai.bin,
+    const cfg = getModelConfig(this.id);
+    return renderCommand(cfg.command, {
+      bin: cfg.bin,
       model,
       prompt,
       output_file: outputFile,
@@ -27,7 +28,7 @@ export class OpenAIAdapter implements AgentAdapter {
     const model = AGENT_MODELS.openai || "gpt-4.1";
     const timeout = req.timeout_ms || ARENA_TIMEOUT_MS;
     const tmpFile = await makeTempFile("openai");
-    const cfg = { ...BUILTIN_DEFAULTS.openai, model };
+    const cfg = { ...getModelConfig(this.id), model };
     const { args } = assembleCommand(cfg, req, tmpFile);
 
     const controller = new AbortController();
