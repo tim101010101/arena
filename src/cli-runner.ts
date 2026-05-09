@@ -3,11 +3,17 @@ import type { ContextSource } from "./types";
 import type { ScenarioConfig } from "./config/scenarios";
 import { BUILTIN_SCENARIOS } from "./config/scenarios";
 import { registry } from "./adapters/registry";
-import { runChallenge } from "./core/challenge";
+import { runScenario } from "./core/scenario";
 import { reviewPositions } from "./core/review";
 import { availableModels } from "./core/availability";
-import { formatChallengeTranscript } from "./core/output";
+import { formatTranscript } from "./core/output";
 import { acquireContext } from "./context";
+
+async function readStdin(): Promise<string> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of process.stdin) chunks.push(chunk);
+  return Buffer.concat(chunks).toString("utf-8");
+}
 
 function buildHelp(scenarios: Record<string, ScenarioConfig>): string {
   const names = Object.keys(scenarios);
@@ -25,7 +31,7 @@ function buildHelp(scenarios: Record<string, ScenarioConfig>): string {
       lines.push("                  [--rounds N] [--models claude,codex]");
     } else {
       const focusKeys = s.focus_positions ? Object.keys(s.focus_positions).join(",") : "";
-      lines.push(`  arena ${name}  [--code <text>]    Adversarial scenario "${name}"`);
+      lines.push(`  arena ${name}  [--code <text>|-]   Adversarial scenario "${name}"`);
       lines.push("                  [--git-ref <ref>]  Review a git ref");
       lines.push("                  [--git-from <ref> --git-to <ref>]   Review a git range");
       lines.push("                  [--files a,b,c]    Review specific files");
@@ -61,19 +67,20 @@ async function runScenarioCmd(
     positions = input.positions;
   } else {
     const sources: ContextSource[] = [];
+    if (input.stdin) sources.push({ type: "stdin", content: await readStdin() });
     if (input.code) sources.push({ type: "raw", code: input.code });
     if (input.gitRef) sources.push({ type: "git_ref", ref: input.gitRef });
     if (input.gitFrom && input.gitTo) sources.push({ type: "git_range", from: input.gitFrom, to: input.gitTo });
     if (input.files?.length) sources.push({ type: "file_list", paths: input.files });
     if (sources.length === 0) {
-      throw new Error(`${input.scenario} requires one of: --code, --git-ref, --git-from/--git-to, --files`);
+      throw new Error(`${input.scenario} requires one of: --code, --code -, --git-ref, --git-from/--git-to, --files`);
     }
     const acquired = await acquireContext(sources);
     context = acquired.content;
     positions = reviewPositions(input.focus, scenario);
   }
 
-  const result = await runChallenge({
+  const result = await runScenario({
     context,
     positions,
     models: input.models,
@@ -81,7 +88,7 @@ async function runScenarioCmd(
     availableModels: available,
     scenario,
   });
-  console.log(formatChallengeTranscript(result));
+  console.log(formatTranscript(result));
 }
 
 export async function runCli(

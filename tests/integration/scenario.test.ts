@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeAll } from "bun:test";
-import { runChallenge } from "../../src/core/challenge";
-import { formatChallengeTranscript } from "../../src/core/output";
+import { runScenario } from "../../src/core/scenario";
+import { formatTranscript } from "../../src/core/output";
 import { registry } from "../../src/adapters/registry";
 import { MockAdapter } from "./helpers/mock-adapter";
 
@@ -11,7 +11,7 @@ describe("arena_challenge integration", () => {
   });
 
   test("should produce a transcript with one fighter per position", async () => {
-    const result = await runChallenge({
+    const result = await runScenario({
       context: "选 REST 还是 GraphQL",
       positions: ["REST 派", "GraphQL 派"],
       availableModels: ["mock-pro", "mock-con"],
@@ -24,19 +24,19 @@ describe("arena_challenge integration", () => {
   });
 
   test("should label transcript with positions, not fighter ids", async () => {
-    const result = await runChallenge({
+    const result = await runScenario({
       context: "ctx",
       positions: ["微服务派", "单体派"],
       availableModels: ["mock-pro", "mock-con"],
       rounds: 1,
     });
-    const transcript = formatChallengeTranscript(result);
+    const transcript = formatTranscript(result);
     expect(transcript).toContain("微服务派");
     expect(transcript).toContain("单体派");
   });
 
   test("should reuse same model with different positions when only one available", async () => {
-    const result = await runChallenge({
+    const result = await runScenario({
       context: "ctx",
       positions: ["pro", "con"],
       availableModels: ["mock-pro"],

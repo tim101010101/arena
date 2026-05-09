@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeAll } from "bun:test";
-import { runChallenge } from "../../src/core/challenge";
+import { runScenario } from "../../src/core/scenario";
 import { registry } from "../../src/adapters/registry";
 import type { AgentAdapter, AgentRequest, AgentResponse, HealthResult } from "../../src/adapters/base";
 
@@ -35,10 +35,10 @@ beforeAll(() => {
   registry.register(stubB);
 });
 
-describe("runChallenge", () => {
+describe("runScenario", () => {
   test("should reject when fewer than 2 positions provided", async () => {
     expect(
-      runChallenge({
+      runScenario({
         context: "x",
         positions: ["only one"],
         availableModels: ["stub-a", "stub-b"],
@@ -47,7 +47,7 @@ describe("runChallenge", () => {
   });
 
   test("should dispatch one fighter per position with diverse models", async () => {
-    const result = await runChallenge({
+    const result = await runScenario({
       context: "ctx",
       positions: ["pro", "con"],
       availableModels: ["stub-a", "stub-b"],
@@ -61,7 +61,7 @@ describe("runChallenge", () => {
   });
 
   test("should reuse the same model when only one is available", async () => {
-    const result = await runChallenge({
+    const result = await runScenario({
       context: "ctx",
       positions: ["pro", "con"],
       availableModels: ["stub-a"],
@@ -73,7 +73,7 @@ describe("runChallenge", () => {
   });
 
   test("should run the configured number of rounds", async () => {
-    const result = await runChallenge({
+    const result = await runScenario({
       context: "ctx",
       positions: ["a", "b"],
       availableModels: ["stub-a", "stub-b"],
@@ -88,7 +88,7 @@ describe("runChallenge", () => {
     stubA.requests = [];
     stubB.requests = [];
 
-    await runChallenge({
+    await runScenario({
       context: "ctx",
       positions: ["微服务派", "单体派"],
       availableModels: ["stub-a", "stub-b"],
@@ -102,7 +102,7 @@ describe("runChallenge", () => {
 
   test("should default rounds when not specified", async () => {
     const { DEFAULT_ROUNDS } = await import("../../src/constants");
-    const result = await runChallenge({
+    const result = await runScenario({
       context: "ctx",
       positions: ["a", "b"],
       availableModels: ["stub-a", "stub-b"],
@@ -112,7 +112,7 @@ describe("runChallenge", () => {
   });
 
   test("should respect models override", async () => {
-    const result = await runChallenge({
+    const result = await runScenario({
       context: "ctx",
       positions: ["a", "b"],
       availableModels: ["stub-a", "stub-b"],

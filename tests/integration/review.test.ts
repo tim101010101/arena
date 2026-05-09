@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeAll } from "bun:test";
-import { runChallenge } from "../../src/core/challenge";
+import { runScenario } from "../../src/core/scenario";
 import { reviewPositions } from "../../src/core/review";
 import { acquireContext } from "../../src/context";
 import { registry } from "../../src/adapters/registry";
@@ -14,7 +14,7 @@ describe("arena_review integration", () => {
 
   test("should run review as challenge with attacker positions over raw code", async () => {
     const ctx = await acquireContext([{ type: "raw", code: SAMPLE_CODE }]);
-    const result = await runChallenge({
+    const result = await runScenario({
       context: ctx.content,
       positions: reviewPositions(["bugs", "security"]),
       availableModels: ["rev-a", "rev-b"],
@@ -27,7 +27,7 @@ describe("arena_review integration", () => {
   });
 
   test("should default to bug + security when no focus given", async () => {
-    const result = await runChallenge({
+    const result = await runScenario({
       context: "any code",
       positions: reviewPositions(),
       availableModels: ["rev-a", "rev-b"],

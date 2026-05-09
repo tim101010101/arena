@@ -126,6 +126,14 @@ describe("acquireContext", () => {
     });
   });
 
+  describe("stdin source", () => {
+    test("should return pre-read stdin content directly", async () => {
+      const result = await acquireContext([{ type: "stdin", content: "piped input" }]);
+      expect(result.content).toBe("piped input");
+      expect(result.metadata.source_type).toBe("stdin");
+    });
+  });
+
   describe("multiple sources", () => {
     test("should combine multiple sources with separator", async () => {
       const result = await acquireContext([

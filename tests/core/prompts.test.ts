@@ -1,37 +1,37 @@
 import { describe, test, expect } from "bun:test";
-import { challengeSystemPrompt, challengeRoundPrompt } from "../../src/core/prompts";
+import { scenarioSystemPrompt, scenarioRoundPrompt } from "../../src/core/prompts";
 
-describe("challengeSystemPrompt", () => {
+describe("scenarioSystemPrompt", () => {
   test("should include the assigned position verbatim", () => {
-    const sys = challengeSystemPrompt("微服务派");
+    const sys = scenarioSystemPrompt("微服务派");
     expect(sys).toContain("微服务派");
   });
 
   test("should instruct the agent to argue for its position", () => {
-    const sys = challengeSystemPrompt("X");
+    const sys = scenarioSystemPrompt("X");
     expect(sys.toLowerCase()).toMatch(/argue|defend|advocate|position/);
   });
 
   test("should not embed defender/challenger role distinction", () => {
-    const sys = challengeSystemPrompt("X");
+    const sys = scenarioSystemPrompt("X");
     expect(sys.toLowerCase()).not.toContain("defender");
     expect(sys.toLowerCase()).not.toContain("challenger");
   });
 });
 
-describe("challengeRoundPrompt", () => {
+describe("scenarioRoundPrompt", () => {
   test("should include context", () => {
-    const p = challengeRoundPrompt("decision X", 1, []);
+    const p = scenarioRoundPrompt("decision X", 1, []);
     expect(p).toContain("decision X");
   });
 
   test("should include the round number", () => {
-    const p = challengeRoundPrompt("ctx", 3, []);
+    const p = scenarioRoundPrompt("ctx", 3, []);
     expect(p).toMatch(/round[\s:]+3/i);
   });
 
   test("should render history as agent-tagged transcript", () => {
-    const p = challengeRoundPrompt("ctx", 2, [
+    const p = scenarioRoundPrompt("ctx", 2, [
       { role: "agent", agent: "pro-side", content: "claim A" },
       { role: "agent", agent: "con-side", content: "rebuttal B" },
     ]);
@@ -42,7 +42,7 @@ describe("challengeRoundPrompt", () => {
   });
 
   test("should omit history section on first round with no prior responses", () => {
-    const p = challengeRoundPrompt("ctx", 1, []);
+    const p = scenarioRoundPrompt("ctx", 1, []);
     expect(p.toLowerCase()).not.toContain("previous");
   });
 });

@@ -33,6 +33,9 @@ export async function acquireContext(sources: ContextSource[]): Promise<Acquired
       case "raw":
         content = source.code;
         break;
+      case "stdin":
+        content = source.content;
+        break;
       case "file_list": {
         const root = source.root || process.cwd();
         const contents: string[] = [];

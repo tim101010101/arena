@@ -1,6 +1,6 @@
-import type { ChallengeResult } from "./challenge";
+import type { ScenarioResult } from "./scenario";
 
-export function formatChallengeTranscript(result: ChallengeResult): string {
+export function formatTranscript(result: ScenarioResult): string {
   const positionById = new Map(result.fighters.map((f) => [f.id, f.position]));
   const modelById = new Map(result.fighters.map((f) => [f.id, f.model]));
 

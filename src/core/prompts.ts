@@ -3,14 +3,14 @@ import type { ScenarioPrompts } from "../config/scenarios";
 import { BUILTIN_SCENARIOS } from "../config/scenarios";
 import { renderString } from "../config/template";
 
-export function challengeSystemPrompt(
+export function scenarioSystemPrompt(
   position: string,
   prompts: ScenarioPrompts = BUILTIN_SCENARIOS.challenge.prompts,
 ): string {
   return renderString(prompts.system, { prompt: "", position });
 }
 
-export function challengeRoundPrompt(
+export function scenarioRoundPrompt(
   context: string,
   round: number,
   history: HistoryEntry[],

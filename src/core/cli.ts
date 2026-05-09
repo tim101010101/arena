@@ -7,6 +7,7 @@ export interface ScenarioInput {
   positions: string[];
   focus?: string[];
   code?: string;
+  stdin?: boolean;
   gitRef?: string;
   gitFrom?: string;
   gitTo?: string;
@@ -60,7 +61,9 @@ function parseScenario(name: string, scenario: ScenarioConfig, rest: string[]): 
         input.focus = parts;
         i = r.next;
       } else if (flag === "--code") {
-        const r = takeValue(rest, i, flag); input.code = r.value; i = r.next;
+        const r = takeValue(rest, i, flag);
+        if (r.value === "-") { input.stdin = true; } else { input.code = r.value; }
+        i = r.next;
       } else if (flag === "--git-ref") {
         const r = takeValue(rest, i, flag); input.gitRef = r.value; i = r.next;
       } else if (flag === "--git-from") {

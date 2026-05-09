@@ -4,25 +4,15 @@ export interface Fighter {
   position: string;
 }
 
-export function dispatch(
-  positions: string[],
-  availableModels: string[],
-  override?: string[],
-): Fighter[] {
+export function dispatch(positions: string[], models: string[]): Fighter[] {
   if (positions.length === 0) throw new Error("positions cannot be empty");
-  if (availableModels.length === 0) throw new Error("no available models");
-
-  if (override?.length) {
-    const unavailable = override.filter((m) => !availableModels.includes(m));
-    if (unavailable.length) {
-      throw new Error(`override contains unavailable models: ${unavailable.join(", ")}`);
-    }
+  if (models.length !== positions.length) {
+    throw new Error(`models length (${models.length}) must equal positions length (${positions.length})`);
   }
+  return positions.map((position, i) => ({ id: `${models[i]}#${i}`, model: models[i], position }));
+}
 
-  const pool = override?.length ? override : availableModels;
-
-  return positions.map((position, i) => {
-    const model = pool[i % pool.length];
-    return { id: `${model}#${i}`, model, position };
-  });
+export function roundRobin(count: number, pool: string[]): string[] {
+  if (pool.length === 0) throw new Error("no models in pool");
+  return Array.from({ length: count }, (_, i) => pool[i % pool.length]);
 }

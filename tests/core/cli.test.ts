@@ -95,6 +95,12 @@ describe("parseArgs", () => {
     expect(cmd.kind).toBe("error");
   });
 
+  test("should parse --code - as stdin flag", () => {
+    const cmd = parseArgs(["review", "--code", "-"]);
+    expect(cmd.kind).toBe("scenario");
+    if (cmd.kind === "scenario") expect(cmd.input.stdin).toBe(true);
+  });
+
   test("should accept user-defined scenarios via override map", () => {
     const cmd = parseArgs(
       ["mydiscuss", "--context", "x", "--position", "a", "--position", "b"],

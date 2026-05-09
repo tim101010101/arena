@@ -2,11 +2,11 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { registry } from "../../src/adapters/registry";
 import { registerAllAdapters } from "../../src/adapters/register-all";
-import { runChallenge } from "../../src/core/challenge";
+import { runScenario } from "../../src/core/scenario";
 import { reviewPositions } from "../../src/core/review";
 import { availableModels } from "../../src/core/availability";
 import { acquireContext } from "../../src/context";
-import { formatChallengeTranscript } from "../../src/core/output";
+import { formatTranscript } from "../../src/core/output";
 import type { Case } from "./schema";
 import type { RawOutput } from "./schema";
 
@@ -49,7 +49,7 @@ export async function executeCase(opts: ExecuteOptions): Promise<RawOutput> {
     positions = reviewPositions(opts.case.focus);
   }
 
-  const result = await runChallenge({
+  const result = await runScenario({
     context,
     positions,
     availableModels: available,
@@ -90,7 +90,7 @@ export async function executeCase(opts: ExecuteOptions): Promise<RawOutput> {
     run_id: opts.runId,
     fighters: result.fighters.map((f) => ({ id: f.id, model: f.model, position: f.position })),
     rounds,
-    formatted_transcript: formatChallengeTranscript(result),
+    formatted_transcript: formatTranscript(result),
     structural: {
       rounds_completed: rounds.length,
       errors,
