@@ -1,6 +1,9 @@
 import type { AgentAdapter, AgentRequest, AgentResponse, HealthResult } from "./base";
 import { agentEnv, withTimeout, makeTempFile, cleanupTempFile, readStderr, readFileText, probeBinary, spawnProcess } from "../utils";
 import { ARENA_TIMEOUT_MS, AGENT_MODELS, HEALTH_CHECK_TIMEOUT_MS } from "../constants";
+import { BUILTIN_DEFAULTS } from "../config/defaults";
+import { assembleCommand } from "../config/assemble";
+import { renderCommand } from "../config/template";
 
 export class CodexAdapter implements AgentAdapter {
   readonly id = "codex";
@@ -11,27 +14,20 @@ export class CodexAdapter implements AgentAdapter {
   }
 
   buildArgs(model: string | undefined, outputFile: string, prompt: string): string[] {
-    const args = ["codex", "exec", "--full-auto", "--skip-git-repo-check", "-s", "read-only"];
-    if (model) args.push("-m", model);
-    args.push("-o", outputFile, prompt);
-    return args;
+    return renderCommand(BUILTIN_DEFAULTS.codex.command, {
+      bin: BUILTIN_DEFAULTS.codex.bin,
+      model,
+      prompt,
+      output_file: outputFile,
+    });
   }
 
   async execute(req: AgentRequest): Promise<AgentResponse> {
     const t0 = Date.now();
-    const model = AGENT_MODELS.codex;
     const timeout = req.timeout_ms || ARENA_TIMEOUT_MS;
     const tmpFile = await makeTempFile("codex");
-
-    let prompt = req.prompt;
-    if (req.system) prompt = `${req.system}\n\n${prompt}`;
-    if (req.context) prompt = `Context:\n${req.context}\n\n${prompt}`;
-    if (req.history?.length) {
-      const hist = req.history.map((h) => `[${h.agent ?? h.role}]: ${h.content}`).join("\n");
-      prompt = `${prompt}\n\nPrevious discussion:\n${hist}`;
-    }
-
-    const args = this.buildArgs(model, tmpFile, prompt);
+    const cfg = { ...BUILTIN_DEFAULTS.codex, model: AGENT_MODELS.codex };
+    const { args } = assembleCommand(cfg, req, tmpFile);
 
     const controller = new AbortController();
     const proc = spawnProcess(args, {
@@ -70,7 +66,7 @@ export class CodexAdapter implements AgentAdapter {
     return {
       content: content.trim(),
       agent: this.id,
-      model,
+      model: AGENT_MODELS.codex,
       latency_ms: Date.now() - t0,
     };
   }

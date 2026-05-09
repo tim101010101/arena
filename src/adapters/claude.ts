@@ -1,6 +1,8 @@
 import type { AgentAdapter, AgentRequest, AgentResponse, HealthResult } from "./base";
 import { agentEnv, withTimeout, readStdout, readStderr, probeBinary, spawnProcess } from "../utils";
 import { ARENA_TIMEOUT_MS, AGENT_MODELS, HEALTH_CHECK_TIMEOUT_MS } from "../constants";
+import { BUILTIN_DEFAULTS } from "../config/defaults";
+import { assembleCommand } from "../config/assemble";
 
 export class ClaudeAdapter implements AgentAdapter {
   readonly id = "claude";
@@ -11,20 +13,7 @@ export class ClaudeAdapter implements AgentAdapter {
   }
 
   buildArgs(req: AgentRequest): string[] {
-    const model = AGENT_MODELS.claude;
-    const args = ["claude", "-p", "--output-format", "text", "--no-session-persistence"];
-    if (model) args.push("--model", model);
-    args.push("--allowedTools", "Read,Glob,Grep,Bash(git:*)");
-    if (req.system) args.push("--system-prompt", req.system);
-
-    let prompt = req.prompt;
-    if (req.context) prompt = `Context:\n${req.context}\n\n${prompt}`;
-    if (req.history?.length) {
-      const hist = req.history.map((h) => `[${h.agent ?? h.role}]: ${h.content}`).join("\n");
-      prompt = `${prompt}\n\nPrevious discussion:\n${hist}`;
-    }
-    args.push(prompt);
-    return args;
+    return assembleCommand(BUILTIN_DEFAULTS.claude, req).args;
   }
 
   async execute(req: AgentRequest): Promise<AgentResponse> {

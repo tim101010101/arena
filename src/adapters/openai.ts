@@ -1,6 +1,9 @@
 import type { AgentAdapter, AgentRequest, AgentResponse, HealthResult } from "./base";
 import { agentEnv, withTimeout, makeTempFile, cleanupTempFile, readStderr, readFileText, probeBinary, spawnProcess } from "../utils";
 import { ARENA_TIMEOUT_MS, AGENT_MODELS, HEALTH_CHECK_TIMEOUT_MS } from "../constants";
+import { BUILTIN_DEFAULTS } from "../config/defaults";
+import { assembleCommand } from "../config/assemble";
+import { renderCommand } from "../config/template";
 
 export class OpenAIAdapter implements AgentAdapter {
   readonly id = "openai";
@@ -11,16 +14,12 @@ export class OpenAIAdapter implements AgentAdapter {
   }
 
   buildArgs(model: string, outputFile: string, prompt: string): string[] {
-    return [
-      "codex", "exec",
-      "--full-auto",
-      "--skip-git-repo-check",
-      "-s", "read-only",
-      "-c", 'model_provider="openai"',
-      "-m", model,
-      "-o", outputFile,
+    return renderCommand(BUILTIN_DEFAULTS.openai.command, {
+      bin: BUILTIN_DEFAULTS.openai.bin,
+      model,
       prompt,
-    ];
+      output_file: outputFile,
+    });
   }
 
   async execute(req: AgentRequest): Promise<AgentResponse> {
@@ -28,16 +27,8 @@ export class OpenAIAdapter implements AgentAdapter {
     const model = AGENT_MODELS.openai || "gpt-4.1";
     const timeout = req.timeout_ms || ARENA_TIMEOUT_MS;
     const tmpFile = await makeTempFile("openai");
-
-    let prompt = req.prompt;
-    if (req.system) prompt = `${req.system}\n\n${prompt}`;
-    if (req.context) prompt = `Context:\n${req.context}\n\n${prompt}`;
-    if (req.history?.length) {
-      const hist = req.history.map((h) => `[${h.agent ?? h.role}]: ${h.content}`).join("\n");
-      prompt = `${prompt}\n\nPrevious discussion:\n${hist}`;
-    }
-
-    const args = this.buildArgs(model, tmpFile, prompt);
+    const cfg = { ...BUILTIN_DEFAULTS.openai, model };
+    const { args } = assembleCommand(cfg, req, tmpFile);
 
     const controller = new AbortController();
     const proc = spawnProcess(args, {
