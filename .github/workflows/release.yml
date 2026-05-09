@@ -98,7 +98,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            arena-debate-*.tgz
+            arena-mcp-*.tgz
             dist/native/arena-*
           generate_release_notes: true
           body: |
@@ -115,5 +115,5 @@ jobs:
             ### npm
 
             ```bash
-            npm install -g arena-debate   # or: npx arena-debate
+            npm install -g arena-mcp      # or: npx arena-mcp
             ```

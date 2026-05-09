@@ -59,7 +59,7 @@ ARENA_INSTALL_DIR=/usr/local/bin ARENA_VERSION=v0.1.3 \
 ### npm
 
 ```bash
-npm install -g arena-debate     # or: npx arena-debate
+npm install -g arena-mcp        # or: npx arena-mcp
 ```
 
 ## CLI usage
