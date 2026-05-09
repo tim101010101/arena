@@ -1,6 +1,6 @@
 {
   "name": "arena-debate",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Position-driven adversarial debate CLI — host supplies opposing stances, arena runs the debate across local model CLIs (Claude, Codex, Gemini, OpenAI, Kimi).",
   "type": "module",
   "main": "dist/index.js",
