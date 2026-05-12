@@ -1,4 +1,4 @@
-import { test, expect, spyOn } from "bun:test";
+import { test, expect } from "bun:test";
 import { registry } from "../../src/adapters/registry";
 import { registerAllAdapters } from "../../src/adapters/register-all";
 import { setActiveModels, BUILTIN_DEFAULTS } from "../../src/config/defaults";
@@ -17,17 +17,12 @@ test("two profiles sharing bin=codex both register independently", () => {
   expect(registry.has("openai")).toBe(true);
 });
 
-test("warns when a profile references unknown bin", () => {
-  const warnSpy = spyOn(console, "warn").mockImplementation(() => {});
+test("registers custom model with unknown bin using a dynamic adapter", () => {
   setActiveModels({
     ...BUILTIN_DEFAULTS,
-    typo: { ...BUILTIN_DEFAULTS.codex, bin: "opencod" },
+    custom_model: { ...BUILTIN_DEFAULTS.gemini, bin: "custom-cli" },
   });
   registerAllAdapters({ force: true });
-  expect(registry.has("typo")).toBe(false);
-  expect(warnSpy).toHaveBeenCalledWith(
-    expect.stringContaining(`profile "typo"`),
-  );
-  expect(warnSpy.mock.calls[0][0]).toContain('unknown bin "opencod"');
-  warnSpy.mockRestore();
+  // Custom models with any bin name should be registered; health check surfaces availability
+  expect(registry.has("custom_model")).toBe(true);
 });

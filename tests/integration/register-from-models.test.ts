@@ -1,6 +1,6 @@
 import { describe, test, expect } from "bun:test";
 import { AdapterRegistry } from "../../src/adapters/registry";
-import { registerAdaptersFromModels } from "../../src/adapters/register-all";
+import { registerModelsInto } from "../../src/adapters/register-all";
 import type { ModelConfig } from "../../src/config/schema";
 
 const BASE_CMD: ModelConfig["command"] = {
@@ -20,10 +20,10 @@ function makeModel(overrides: Partial<ModelConfig> = {}): ModelConfig {
   };
 }
 
-describe("registerAdaptersFromModels", () => {
+describe("registerModelsInto", () => {
   test("should_skip_disabled_models", () => {
     const reg = new AdapterRegistry();
-    registerAdaptersFromModels(
+    registerModelsInto(
       {
         claude: makeModel({ enabled: true, bin: "claude" }),
         openai: makeModel({ enabled: false, bin: "codex" }),
@@ -34,9 +34,9 @@ describe("registerAdaptersFromModels", () => {
     expect(reg.has("openai")).toBe(false);
   });
 
-  test("should_register_custom_user_defined_model", () => {
+  test("should_register_custom_user_defined_model_with_unknown_bin", () => {
     const reg = new AdapterRegistry();
-    registerAdaptersFromModels(
+    registerModelsInto(
       { glm: makeModel({ enabled: true, bin: "glm-cli" }) },
       reg,
     );
@@ -45,7 +45,7 @@ describe("registerAdaptersFromModels", () => {
 
   test("should_register_all_enabled_builtin_models", () => {
     const reg = new AdapterRegistry();
-    registerAdaptersFromModels(
+    registerModelsInto(
       {
         claude: makeModel({ enabled: true, bin: "claude" }),
         codex: makeModel({ enabled: true, bin: "codex" }),
@@ -60,7 +60,7 @@ describe("registerAdaptersFromModels", () => {
 
   test("should_register_no_adapters_when_all_disabled", () => {
     const reg = new AdapterRegistry();
-    registerAdaptersFromModels(
+    registerModelsInto(
       {
         claude: makeModel({ enabled: false }),
         openai: makeModel({ enabled: false }),
@@ -72,7 +72,7 @@ describe("registerAdaptersFromModels", () => {
 
   test("should_assign_correct_id_to_custom_adapter", () => {
     const reg = new AdapterRegistry();
-    registerAdaptersFromModels(
+    registerModelsInto(
       { glm: makeModel({ enabled: true, bin: "glm-cli" }) },
       reg,
     );
@@ -82,7 +82,7 @@ describe("registerAdaptersFromModels", () => {
 
   test("should_register_both_builtin_and_custom_models_when_all_enabled", () => {
     const reg = new AdapterRegistry();
-    registerAdaptersFromModels(
+    registerModelsInto(
       {
         claude: makeModel({ enabled: true, bin: "claude" }),
         glm: makeModel({ enabled: true, bin: "glm-cli" }),
@@ -91,5 +91,20 @@ describe("registerAdaptersFromModels", () => {
     );
     expect(reg.has("claude")).toBe(true);
     expect(reg.has("glm")).toBe(true);
+  });
+
+  test("should_use_file_binary_for_file_output_model", () => {
+    const reg = new AdapterRegistry();
+    registerModelsInto(
+      {
+        custom: makeModel({
+          enabled: true,
+          bin: "custom-cli",
+          command: { args: ["{{bin}}", "-o", "{{output_file}}", "{{prompt}}"], output: { via: "file" } },
+        }),
+      },
+      reg,
+    );
+    expect(reg.has("custom")).toBe(true);
   });
 });

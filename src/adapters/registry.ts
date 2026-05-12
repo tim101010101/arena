@@ -1,6 +1,6 @@
 import type { AgentAdapter, HealthResult } from "./base";
 
-class AdapterRegistry {
+export class AdapterRegistry {
   private adapters = new Map<string, AgentAdapter>();
 
   register(adapter: AgentAdapter): void {

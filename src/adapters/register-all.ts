@@ -1,14 +1,17 @@
-import { registry } from "./registry";
+import { AdapterRegistry, registry as defaultRegistry } from "./registry";
 import { ProfileEntry } from "./profile-entry";
 import { claudeBinary } from "./binaries/claude";
 import { codexBinary } from "./binaries/codex";
 import { geminiBinary } from "./binaries/gemini";
 import { kimiBinary } from "./binaries/kimi";
 import { opencodeBinary } from "./binaries/opencode";
+import { makeStdoutBinary } from "./binaries/_stdout";
+import { makeFileBinary } from "./binaries/_file";
 import { getActiveModels } from "../config/defaults";
 import type { BinaryAdapter } from "./base";
+import type { ModelConfig } from "../config/schema";
 
-const BINARIES: Record<string, BinaryAdapter> = {
+const BUILTIN_BINARIES: Record<string, BinaryAdapter> = {
   claude: claudeBinary,
   codex: codexBinary,
   gemini: geminiBinary,
@@ -16,21 +19,29 @@ const BINARIES: Record<string, BinaryAdapter> = {
   opencode: opencodeBinary,
 };
 
+function binaryForProfile(profile: ModelConfig): BinaryAdapter {
+  return (
+    BUILTIN_BINARIES[profile.bin] ??
+    (profile.command.output.via === "file"
+      ? makeFileBinary(profile.bin)
+      : makeStdoutBinary(profile.bin))
+  );
+}
+
+export function registerModelsInto(
+  models: Record<string, ModelConfig>,
+  reg: AdapterRegistry,
+): void {
+  for (const [id, profile] of Object.entries(models)) {
+    if (!profile.enabled) continue;
+    reg.register(new ProfileEntry(id, binaryForProfile(profile)));
+  }
+}
+
 let registered = false;
 
 export function registerAllAdapters(opts?: { force?: boolean }): void {
   if (registered && !opts?.force) return;
   registered = true;
-
-  for (const [id, profile] of Object.entries(getActiveModels())) {
-    if (!profile.enabled) continue;
-
-    const binary = BINARIES[profile.bin];
-    if (!binary) {
-      console.warn(`[arena] profile "${id}" references unknown bin "${profile.bin}"; skipping. Available bins: ${Object.keys(BINARIES).join(", ")}`);
-      continue;
-    }
-
-    registry.register(new ProfileEntry(id, binary));
-  }
+  registerModelsInto(getActiveModels(), defaultRegistry);
 }
